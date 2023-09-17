@@ -12,7 +12,7 @@ import pandas as pd
 abbreviations_df = pd.read_csv(
     "data/Text-Preprocessing-Data/abbreviations.csv"
 )
-apostrophe_df = pd.read_csv("data/Text-Preprocessing-Data/abbreviations.csv")
+apostrophe_df = pd.read_csv("data/Text-Preprocessing-Data/apostrophe.csv")
 emoticons_df = pd.read_csv("data/Text-Preprocessing-Data/emoticons.csv")
 
 # Create dictionaries from dataframes
@@ -51,23 +51,26 @@ def preprocessing(input_text: str) -> str:
     """
     # Step A : Converting html entities i.e. (&lt; &gt; &amp;)
     text = html.unescape(input_text)
-    # Step B : Removing "@user" from all the text
-    text = re.sub("@[\w]*", "", text)
-    # Step C : Remove http & https links
-    text = re.sub("http://\S+|https://\S+", "", text)
-    # Step D : Emoticon Lookup
+    # Step B: Remove HTML tags
+    text = re.sub(re.compile('<.*?>'), "", text)
+    # Step C : Removing "@user" from all the text
+    text = re.sub("@[\\w]*", "", text)
+    # Step D : Remove http & https links
+    text = re.sub("http://\\S+|https://\\S+", "", text)
+    # Step E : Emoticon Lookup
     text = lookup_dict(text, emoticons_dict)
-    # Step E : Emoji Lookup
-    text = emoji.demojize(text)
-    # Step F : Changing all the text into lowercase
+    # Step F : Emoji Lookup
+    text = emoji.demojize(text, delimiters=(" ", " "))
+    # Step G : Changing all the text into lowercase
     text = text.lower()
-    # Step G : Apostrophe Lookup
+    # Step H : Apostrophe Lookup
+    text = text.replace("’", "'")
     text = lookup_dict(text, apostrophe_dict)
-    # Step H : Short Word Lookup
+    # Step I : Short Word Lookup
     text = lookup_dict(text, abbreviations_dict)
-    # Step I : Replacing Punctuations, Special Characters & Numbers (integers) with space
+    # Step J : Replacing Punctuations, Special Characters & Numbers (integers) with space
     text = re.sub(r"[^a-z]", " ", text)
-    # Step J: Remove whitespace
+    # Step K: Remove whitespace
     text = re.sub(r"\s+", " ", text)
     return text
 
@@ -82,12 +85,12 @@ if __name__ == "__main__":
     print("Done Load data")
 
     print("Start process")
-    df["clear_text"] = df["text"].progress_apply(preprocessing)
+    df["clean_text"] = df["text"].progress_apply(preprocessing)
     print("Done process")
 
     print("Start save")
     df.to_parquet(
-        "data/Clean_text_dataset.br",
+        "data/intermediate_data/clean_dataset.br",
         engine="pyarrow",
         compression="brotli",
         index=False,
