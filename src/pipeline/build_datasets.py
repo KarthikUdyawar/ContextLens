@@ -44,9 +44,7 @@ df["target"] = df["clean_text"].progress_apply(target_encoder)
 print("Done target encoding\n")
 
 print("Start filtering")
-df["text_length"] = df["clean_text"].progress_apply(
-    lambda x: len(str(x).split())
-)
+df["text_length"] = df["clean_text"].progress_apply(lambda x: len(str(x)))
 filtered_df = df[(df["text_length"] != 0) & (df["text_length"] < 500)]
 print("Done filtering\n")
 
@@ -76,29 +74,25 @@ print("Start saving datasets")
 
 data_version_folder = f"src/data/{DATA_VERSION}"
 
-train_data_file = "train_data.parquet"
-valid_data_file = "valid_data.parquet"
-test_data_file = "test_data.parquet"
-
 if not os.path.exists(data_version_folder):
     os.makedirs(data_version_folder)
 
 train_df.to_parquet(
-    os.path.join(data_version_folder, train_data_file),
+    os.path.join(data_version_folder, "train_data.parquet"),
     engine="pyarrow",
     compression="brotli",
     index=False,
 )
 
 valid_df.to_parquet(
-    os.path.join(data_version_folder, valid_data_file),
+    os.path.join(data_version_folder, "valid_data.parquet"),
     engine="pyarrow",
     compression="brotli",
     index=False,
 )
 
 test_df.to_parquet(
-    os.path.join(data_version_folder, test_data_file),
+    os.path.join(data_version_folder, "test_data.parquet"),
     engine="pyarrow",
     compression="brotli",
     index=False,
