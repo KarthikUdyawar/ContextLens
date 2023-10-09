@@ -11,18 +11,15 @@ import pandas as pd
 
 class TextPreprocessor:
     """Converts raw text into clean text"""
+
     def __init__(self):
         """Initialize the preprocessor"""
         # Load abbreviation, apostrophe, and emoticon data
         self.abbreviations_df = pd.read_csv(
             "data/Text-Preprocessing-Data/abbreviations.csv"
         )
-        self.apostrophe_df = pd.read_csv(
-            "data/Text-Preprocessing-Data/apostrophe.csv"
-        )
-        self.emoticons_df = pd.read_csv(
-            "data/Text-Preprocessing-Data/emoticons.csv"
-        )
+        self.apostrophe_df = pd.read_csv("data/Text-Preprocessing-Data/apostrophe.csv")
+        self.emoticons_df = pd.read_csv("data/Text-Preprocessing-Data/emoticons.csv")
 
         # Create dictionaries from dataframes
         self.abbreviations_dict = dict(self.abbreviations_df.values)
@@ -81,6 +78,7 @@ class TextPreprocessor:
 
 
 if __name__ == "__main__":
+    import os
     from tqdm import tqdm
 
     tqdm.pandas()
@@ -95,6 +93,9 @@ if __name__ == "__main__":
     print("Done process")
 
     print("Start save")
+    if not os.path.exists("data/intermediate_data"):
+        os.makedirs("data/intermediate_data")
+
     df.to_parquet(
         "data/intermediate_data/clean_dataset.br",
         engine="pyarrow",
