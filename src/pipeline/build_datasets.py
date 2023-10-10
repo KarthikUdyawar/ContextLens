@@ -22,21 +22,18 @@ print("Done pre processing\n")
 df = df.drop_duplicates(subset=["clean_text"])
 
 
-def target_encoder(text: str) -> int:
+def target_encoder(text: str) -> str:
     """
-    Encode text sentiment polarity into integer values.
+    Encode text sentiment polarity.
 
     Args:
         text (str): The input text for sentiment analysis.
 
     Returns:
-        int: An integer code representing the sentiment polarity:
-             - 4 for positive sentiment (polarity > 0)
-             - 0 for negative sentiment (polarity < 0)
-             - 2 for neutral sentiment (polarity = 0)
+        str: sentiment polarity.
     """
     polarity = TextBlob(text).sentiment.polarity  # type: ignore
-    return 4 if polarity > 0 else 0 if polarity < 0 else 2
+    return "positive" if polarity > 0 else "negative" if polarity < 0 else "neutral"
 
 
 print("Start target encoding")
@@ -44,8 +41,8 @@ df["target"] = df["clean_text"].progress_apply(target_encoder)
 print("Done target encoding\n")
 
 print("Start filtering")
-df["text_length"] = df["clean_text"].progress_apply(lambda x: len(str(x)))
-filtered_df = df[(df["text_length"] != 0) & (df["text_length"] < 500)]
+df["text_length"] = df["clean_text"].progress_apply(lambda x: len(str(x).split()))
+filtered_df = df[(df["text_length"] != 0) & (df["text_length"] < 100)]
 print("Done filtering\n")
 
 print("Start spiting data")
