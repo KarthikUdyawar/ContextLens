@@ -79,6 +79,7 @@ class TextPreprocessor:
 
 if __name__ == "__main__":
     import os
+
     from tqdm import tqdm
 
     tqdm.pandas()

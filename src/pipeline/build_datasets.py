@@ -1,8 +1,10 @@
 """Builds the datasets"""
 import os
+
 import pandas as pd
-from tqdm import tqdm
 from textblob import TextBlob
+from tqdm import tqdm
+
 from src.utils.split_data import TrainValidTestSplitter
 from src.utils.text_preprocessor import TextPreprocessor
 
