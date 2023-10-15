@@ -80,9 +80,9 @@ test_texts = test_df["text"].tolist()
 max_length = 100
 tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
 
-train_dataset = TextDataset(train_texts, train_data, tokenizer, max_length)
-val_dataset = TextDataset(val_texts, val_data, tokenizer, max_length)
-test_dataset = TextDataset(test_texts, test_data, tokenizer, max_length)
+train_dataset = TextDataset(train_texts, train_data)
+val_dataset = TextDataset(val_texts, val_data)
+test_dataset = TextDataset(test_texts, test_data)
 
 train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
 val_loader = DataLoader(val_dataset, batch_size=16)
