@@ -1,24 +1,23 @@
 """Custom Text Dataset for BERT-based Text Classification"""
 import torch
 from torch.utils.data import Dataset
+from transformers import BertTokenizer
 
 
 class TextDataset(Dataset):
     """A custom text dataset for BERT-based text classification."""
 
-    def __init__(self, texts: list, labels: list, tokenizer, max_length: int):
+    def __init__(self, texts: list, labels: list = None, max_length: int = 100):
         """Initialize the custom text dataset.
 
         Args:
-            texts (list): A list of text samples.
-            labels (list): A list of corresponding labels.
-            tokenizer (transformers.tokenization_utils_base.PreTrainedTokenizer):
-            The text tokenizer.
-            max_length (int): Maximum sequence length.
+            texts (list):  A list of text samples.
+            labels (list, optional): A list of corresponding labels. Defaults to None.
+            max_length (int, optional): Maximum sequence length. Defaults to 100.
         """
         self.texts = texts
         self.labels = labels
-        self.tokenizer = tokenizer
+        self.tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
         self.max_length = max_length
 
     def __len__(self) -> int:
@@ -39,7 +38,6 @@ class TextDataset(Dataset):
             dict: A dictionary containing input_ids, attention_mask, and labels (if available).
         """
         text = self.texts[idx]
-        label = self.labels[idx]
 
         encoding = self.tokenizer.encode_plus(
             text,
@@ -52,7 +50,8 @@ class TextDataset(Dataset):
             truncation=True,
         )
 
-        if label:
+        if self.labels:
+            label = self.labels[idx]
             return {
                 "input_ids": encoding["input_ids"].flatten(),
                 "attention_mask": encoding["attention_mask"].flatten(),
