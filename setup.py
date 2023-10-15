@@ -45,7 +45,7 @@ def get_long_description(file_path: str = "README.md") -> str:
 
 setup(
     name="Contextlens",
-    version="0.1.0",
+    version="0.2.0",
     author="Karthik Udyawar",
     author_email="karthikajitudy@gmail.com",
     license="Apache License",
