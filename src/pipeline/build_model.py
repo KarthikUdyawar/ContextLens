@@ -1,40 +1,45 @@
+"""Build and train the model"""
 import os
 
-import matplotlib.pyplot as plt
 import pandas as pd
-import seaborn as sns
 import torch
-from sklearn.metrics import (
-    ConfusionMatrixDisplay,
-    accuracy_score,
-    classification_report,
-    confusion_matrix,
-)
+from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import OneHotEncoder
 from torch.nn import BCEWithLogitsLoss
 from torch.optim import Adam
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from transformers import BertTokenizer
 
 from src.utils.custom_BERT_classifier import CustomBERTClassifier
 from src.utils.data_frame_batch_loader import DataFrameBatchLoader
+from src.utils.model_report import ModelReportManager
 from src.utils.text_dataset import TextDataset
+
+PWD = os.getcwd()
 
 DATA_VER = "0.1v"
 MODEL_VER = "0.1v"
 
 BREACH_NUM = 0
+BATCH_SIZE = 6 * 5000
+NUM_EPOCHS = 50
+ACCEPTABLE_ACC = 0.85
 
-model_version_folder = f"src/model/{MODEL_VER}/checkpoint_{BREACH_NUM}"
-last_model_version_folder = f"src/model/{MODEL_VER}/checkpoint_{BREACH_NUM-1}"
+SAVE_MODEL_REPORTS = True
+
+model_version_folder = f"{PWD}/src/model/{MODEL_VER}/checkpoint_{BREACH_NUM}"
+last_model_version_folder = f"{PWD}/src/model/{MODEL_VER}/checkpoint_{BREACH_NUM-1}"
+last_model_file_name = (
+    f"{last_model_version_folder}/model_checkpoint+{BREACH_NUM-1}.pth"
+)
+model_file_name = f"{model_version_folder}/model_checkpoint+{BREACH_NUM}.pth"
 
 if not os.path.exists(model_version_folder):
     os.makedirs(model_version_folder)
 
-train_file_path = f"src/data/{DATA_VER}/train_data.parquet"
-valid_file_path = f"src/data/{DATA_VER}/valid_data.parquet"
-test_file_path = f"src/data/{DATA_VER}/test_data.parquet"
+train_file_path = f"{PWD}/src/data/{DATA_VER}/train_data.parquet"
+valid_file_path = f"{PWD}/src/data/{DATA_VER}/valid_data.parquet"
+test_file_path = f"{PWD}/src/data/{DATA_VER}/test_data.parquet"
 
 print("Load dataset")
 train_df = pd.read_parquet(train_file_path, engine="pyarrow")
@@ -42,14 +47,9 @@ valid_df = pd.read_parquet(valid_file_path, engine="pyarrow")
 test_df = pd.read_parquet(test_file_path, engine="pyarrow")
 print("Done Load dataset\n")
 
-batch_size = 6 * 5000  # Adjust the batch size according to your needs
-stratify_col = "target"
-
-train_df_batches = DataFrameBatchLoader(
-    train_df, batch_size, stratify=True, stratify_col=stratify_col
-)
-valid_df_batches = DataFrameBatchLoader(valid_df, batch_size)
-test_df_batches = DataFrameBatchLoader(test_df, batch_size)
+train_df_batches = DataFrameBatchLoader(train_df, BATCH_SIZE, stratify_col="target")
+valid_df_batches = DataFrameBatchLoader(valid_df, BATCH_SIZE)
+test_df_batches = DataFrameBatchLoader(test_df, BATCH_SIZE)
 
 try:
     train_df = train_df_batches[BREACH_NUM]
@@ -77,9 +77,6 @@ train_texts = train_df["text"].tolist()
 val_texts = valid_df["text"].tolist()
 test_texts = test_df["text"].tolist()
 
-max_length = 100
-tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
-
 train_dataset = TextDataset(train_texts, train_data)
 val_dataset = TextDataset(val_texts, val_data)
 test_dataset = TextDataset(test_texts, test_data)
@@ -87,36 +84,45 @@ test_dataset = TextDataset(test_texts, test_data)
 train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
 val_loader = DataLoader(val_dataset, batch_size=16)
 test_loader = DataLoader(test_dataset, batch_size=16)
+
 print("Done Load dataloader")
 
 model = CustomBERTClassifier(num_classes=3)
+
 # Checking if GPU is available
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if device.type != "cuda":
     print("=== GPU not found ===")
-print(f"{device = }")
 
 # Model, optimizer, criterion initialization
 optimizer = Adam(model.parameters(), lr=1e-5)
 criterion = BCEWithLogitsLoss()
-num_epochs = 50
 
 model.to(device)
-file_name = f"{last_model_version_folder}/model_checkpoint+{BREACH_NUM-1}.pth"
 
-if os.path.exists(file_name):
+if os.path.exists(last_model_file_name):
     # File exists, so load the model checkpoint
-    checkpoint = torch.load(file_name)
+    checkpoint = torch.load(last_model_file_name)
     model.load_state_dict(checkpoint["model_state_dict"])
     optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
     epoch = checkpoint["epoch"]
     loss = checkpoint["loss"]
-    print(f"Loaded model from {file_name}")
+    print("Model loaded")
 else:
-    print(f"File {file_name} does not exist. Model not loaded.")
+    print("=== Model not found ===")
 
 
-def get_accuracy(predictions, real_values):
+def get_accuracy(predictions: torch.Tensor, real_values: torch.Tensor) -> float:
+    """
+    Calculate the accuracy of predictions compared to the real values.
+
+    Args:
+        predictions (torch.Tensor): Predicted values.
+        real_values (torch.Tensor): Real (ground truth) values.
+
+    Returns:
+        float: The accuracy score.
+    """
     predictions = torch.cat(predictions).cpu()
     real_values = torch.cat(real_values).cpu()
 
@@ -126,8 +132,27 @@ def get_accuracy(predictions, real_values):
     return accuracy_score(predictions, real_values)
 
 
-def train_model(model, train_dataloader, optimizer, criterion, device):
-    model.train()
+def train_model(
+    _model: CustomBERTClassifier,
+    train_dataloader: DataLoader,
+    _optimizer: Adam,
+    _criterion: BCEWithLogitsLoss,
+    _device: torch.device,
+) -> tuple[float, float]:
+    """
+    Train the BERT-based classifier model.
+
+    Args:
+        _model (CustomBERTClassifier): The custom BERT model.
+        train_dataloader (DataLoader): DataLoader for training data.
+        _optimizer (Adam): Optimizer for model training.
+        _criterion (BCEWithLogitsLoss): Loss criterion for training.
+        _device (torch.device): Device for training (CPU or GPU).
+
+    Returns:
+        tuple[float, float]: A tuple of training loss and accuracy.
+    """
+    _model.train()
     total_loss = 0
     predictions = []
     real_values = []
@@ -135,34 +160,54 @@ def train_model(model, train_dataloader, optimizer, criterion, device):
     # Initialize tqdm to show progress bar
     loop = tqdm(enumerate(train_dataloader), total=len(train_dataloader), leave=True)
 
-    for batch_idx, batch in loop:
-        input_ids = batch["input_ids"].to(device)
-        attention_mask = batch["attention_mask"].to(device)
-        labels = batch["labels"].to(device)
+    for _, batch in loop:
+        input_ids = batch["input_ids"].to(_device)
+        attention_mask = batch["attention_mask"].to(_device)
+        labels = batch["labels"].to(_device)
 
-        optimizer.zero_grad()
-        outputs = model(input_ids, attention_mask)
-        loss = criterion(outputs, labels)
+        _optimizer.zero_grad()
+        outputs = _model(input_ids, attention_mask)
+        _loss = _criterion(outputs, labels)
 
-        loss.backward()
-        optimizer.step()
+        _loss.backward()
+        _optimizer.step()
 
-        total_loss += loss.item()
+        total_loss += _loss.item()
 
         predictions.append(outputs)
         real_values.append(labels)
 
         # Update progress bar
         loop.set_description("Train")
-        loop.set_postfix(loss=loss.item())
+        loop.set_postfix(loss=_loss.item())
 
     accuracy = get_accuracy(predictions, real_values)
 
     return total_loss / len(train_dataloader), accuracy
 
 
-def test(model, test_dataloader, criterion, device):
-    model.eval()
+def test(
+    _model: CustomBERTClassifier,
+    test_dataloader: DataLoader,
+    _criterion: BCEWithLogitsLoss,
+    _device: torch.device,
+    valid_mode: bool = True,
+) -> tuple[float, float]:
+    """
+    Test the BERT-based classifier model.
+
+    Args:
+        _model (CustomBERTClassifier): The custom BERT model.
+        test_dataloader (DataLoader): DataLoader for testing data.
+        _criterion (BCEWithLogitsLoss): Loss criterion for testing.
+        _device (torch.device): Device for testing (CPU or GPU).
+        valid_mode (bool, optional): Set to True for validation, False for testing.
+        Defaults to True.
+
+    Returns:
+        tuple[float, float]: A tuple of testing/validation loss and accuracy.
+    """
+    _model.eval()
     total_loss = 0
     predictions = []
     real_values = []
@@ -170,23 +215,26 @@ def test(model, test_dataloader, criterion, device):
     # Initialize tqdm to show progress bar
     loop = tqdm(enumerate(test_dataloader), total=len(test_dataloader), leave=True)
 
-    for batch_idx, batch in loop:
-        input_ids = batch["input_ids"].to(device)
-        attention_mask = batch["attention_mask"].to(device)
-        labels = batch["labels"].to(device)
+    for _, batch in loop:
+        input_ids = batch["input_ids"].to(_device)
+        attention_mask = batch["attention_mask"].to(_device)
+        labels = batch["labels"].to(_device)
 
         with torch.no_grad():
-            outputs = model(input_ids, attention_mask)
-            loss = criterion(outputs, labels)
+            outputs = _model(input_ids, attention_mask)
+            _loss = _criterion(outputs, labels)
 
-            total_loss += loss.item()
+            total_loss += _loss.item()
 
             predictions.append(outputs)
             real_values.append(labels)
 
             # Update progress bar
-            loop.set_description("Test")
-            loop.set_postfix(loss=loss.item())
+            if valid_mode:
+                loop.set_description("Val")
+            else:
+                loop.set_description("Test")
+            loop.set_postfix(loss=_loss.item())
 
     accuracy = get_accuracy(predictions, real_values)
 
@@ -198,6 +246,7 @@ val_losses = []
 train_accuracies = []
 val_accuracies = []
 
+# pylint: disable=invalid-name
 consecutive_lower_count = 0
 best_val_loss = float("inf")  # Initialize with a high value
 best_model_weights = None
@@ -206,8 +255,8 @@ best_epoch = None
 print("Train Model")
 
 # Training loop
-for epoch in range(num_epochs):
-    print(f"\nEpoch: {epoch+1}/{num_epochs}")
+for epoch in range(NUM_EPOCHS):
+    print(f"\nEpoch: {epoch+1}/{NUM_EPOCHS}")
 
     train_loss, train_accuracy = train_model(
         model, train_loader, optimizer, criterion, device
@@ -247,10 +296,9 @@ if best_model_weights is not None:
 print("Done train Model")
 print("Test Model")
 
-test_loss, test_accuracy = test(model, test_loader, criterion, device)
+test_loss, test_accuracy = test(model, test_loader, criterion, device, valid_mode=False)
 
-if test_accuracy > 0.8:
-    file_name = f"{model_version_folder}/model_checkpoint+{BREACH_NUM}.pth"
+if test_accuracy > ACCEPTABLE_ACC:
     torch.save(
         {
             "epoch": best_epoch,
@@ -258,7 +306,7 @@ if test_accuracy > 0.8:
             "optimizer_state_dict": optimizer.state_dict(),
             "loss": test_loss,
         },
-        file_name,
+        model_file_name,
     )
     print("Model saved")
     print(f"{test_loss = }, {test_accuracy = }")
@@ -269,117 +317,22 @@ print("Done test Model")
 
 print("Getting reports")
 
-
-def plot_training_history(train_losses, val_losses, train_accuracies, val_accuracies):
-    # Create a DataFrame to hold the training history data
-    history_data = pd.DataFrame(
-        {
-            "Epoch": range(1, len(train_losses) + 1),
-            "Train Loss": train_losses,
-            "Validation Loss": val_losses,
-            "Train Accuracy": train_accuracies,
-            "Validation Accuracy": val_accuracies,
-        }
-    )
-
-    # Save the data to a CSV file
-    csv_file_name = f"{model_version_folder}/training_history+{BREACH_NUM}.csv"
-    history_data.to_csv(csv_file_name, index=False)
-
-    plt.figure(figsize=(12, 5))
-
-    plt.subplot(1, 2, 1)
-    sns.lineplot(x=range(1, len(train_losses) + 1), y=train_losses, label="Train Loss")
-    sns.lineplot(x=range(1, len(val_losses) + 1), y=val_losses, label="Validation Loss")
-    plt.xlabel("Epochs")
-    plt.ylabel("Loss")
-    plt.legend()
-    plt.title("Training and Validation Losses")
-
-    plt.subplot(1, 2, 2)
-    sns.lineplot(
-        x=range(1, len(train_accuracies) + 1),
-        y=train_accuracies,
-        label="Train Accuracy",
-    )
-    sns.lineplot(
-        x=range(1, len(val_accuracies) + 1),
-        y=val_accuracies,
-        label="Validation Accuracy",
-    )
-    plt.xlabel("Epochs")
-    plt.ylabel("Accuracy")
-    plt.legend()
-    plt.title("Training and Validation Accuracies")
-
-    plt.tight_layout()
-    plt.savefig(f"{model_version_folder}/Training&Validation-Losses+{BREACH_NUM}.png")
-    plt.show()
-
-
-plot_training_history(train_losses, val_losses, train_accuracies, val_accuracies)
-
-
-# Finding Accuracy
-def get_predictions(model, data_loader, predict_proba=False):
-    model = model.eval()
-    predictions = []
-    real_values = []
-    with torch.no_grad():
-        for batch in data_loader:
-            input_ids = batch["input_ids"].to(device)
-            attention_mask = batch["attention_mask"].to(device)
-            labels = batch["labels"].to(device)
-
-            outputs = model(input_ids, attention_mask)
-            predictions.append(outputs)
-            real_values.append(labels)
-
-    y_pred = torch.cat(predictions).cpu()
-    y_test = torch.cat(real_values).cpu()
-
-    if not predict_proba:
-        y_pred = torch.argmax(y_pred, axis=1).numpy()
-        y_test = torch.argmax(y_test, axis=1).numpy()
-
-    return y_pred, y_test
-
-
-y_pred, y_test = get_predictions(model, test_loader)
-
-
-def save_classification_report(true_labels, predicted_labels, target_names, file_path):
-    # Generate the classification report
-    report = classification_report(
-        true_labels, predicted_labels, target_names=target_names
-    )
-
-    # Save the classification report to a text file
-    with open(file_path, "w", encoding="utf-8") as file:
-        file.write(report)
-
-
-report_file_path = f"{model_version_folder}/report+{BREACH_NUM}.txt"
-
-save_classification_report(
-    y_test,
-    y_pred,
-    one_hot.categories_[0].tolist(),
-    report_file_path,
+report_manager = ModelReportManager(
+    model_version_folder, BREACH_NUM, save_reports=SAVE_MODEL_REPORTS
 )
 
-
-def save_confusion_matrix(BREACH_NUM, model_version_folder, one_hot, y_pred, y_test):
-    conf_mat = confusion_matrix(y_test, y_pred)
-    ConfusionMatrixDisplay(
-        conf_mat, display_labels=one_hot.categories_[0].tolist()
-    ).plot()
-    plt.title("Confusion Matrix")
-    plt.grid(False)
-    plt.savefig(f"{model_version_folder}/ConfusionMatrixDisplay+{BREACH_NUM}.png")
-
-
-save_confusion_matrix(BREACH_NUM, model_version_folder, one_hot, y_pred, y_test)
+# Assuming you have your data and model ready
+report_manager.plot_training_history(
+    train_losses,
+    val_losses,
+    train_accuracies,
+    val_accuracies,
+)
+y_pred, y_test = report_manager.get_predictions(model, test_loader, device)
+report_manager.save_classification_report(
+    y_test, y_pred, one_hot.categories_[0].tolist()
+)
+report_manager.save_confusion_matrix(one_hot, y_pred, y_test)
 
 print("Done getting reports")
 
