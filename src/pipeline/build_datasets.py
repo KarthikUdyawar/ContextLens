@@ -14,6 +14,7 @@ PWD = os.getcwd()
 
 DATA_VERSION = "0.1v"
 SOURCE_FILE_DIR = f"{PWD}/data/Text_dataset.br"
+DATA_VERSION_DIR = f"{PWD}/src/data/{DATA_VERSION}"
 
 print("Start load data")
 df = pd.read_parquet(SOURCE_FILE_DIR, engine="pyarrow")
@@ -76,27 +77,26 @@ print("Done optimize space\n")
 
 print("Start saving datasets")
 
-data_version_folder = f"{PWD}/src/data/{DATA_VERSION}"
 
-if not os.path.exists(data_version_folder):
-    os.makedirs(data_version_folder)
+if not os.path.exists(DATA_VERSION_DIR):
+    os.makedirs(DATA_VERSION_DIR)
 
 train_df.to_parquet(
-    os.path.join(data_version_folder, "train_data.parquet"),
+    os.path.join(DATA_VERSION_DIR, "train_data.parquet"),
     engine="pyarrow",
     compression="brotli",
     index=False,
 )
 
 valid_df.to_parquet(
-    os.path.join(data_version_folder, "valid_data.parquet"),
+    os.path.join(DATA_VERSION_DIR, "valid_data.parquet"),
     engine="pyarrow",
     compression="brotli",
     index=False,
 )
 
 test_df.to_parquet(
-    os.path.join(data_version_folder, "test_data.parquet"),
+    os.path.join(DATA_VERSION_DIR, "test_data.parquet"),
     engine="pyarrow",
     compression="brotli",
     index=False,
