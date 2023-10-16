@@ -1,7 +1,6 @@
 """This script performs text preprocessing on a dataset, including converting HTML entities, 
 removing mentions, links, and emojis, converting text to lowercase, and more.
 """
-# Import necessary libraries
 import html
 import re
 
@@ -16,10 +15,10 @@ class TextPreprocessor:
         """Initialize the preprocessor"""
         # Load abbreviation, apostrophe, and emoticon data
         self.abbreviations_df = pd.read_csv(
-            "data/Text-Preprocessing-Data/abbreviations.csv"
+            "src/Text-Preprocessing-Data/abbreviations.csv"
         )
-        self.apostrophe_df = pd.read_csv("data/Text-Preprocessing-Data/apostrophe.csv")
-        self.emoticons_df = pd.read_csv("data/Text-Preprocessing-Data/emoticons.csv")
+        self.apostrophe_df = pd.read_csv("src/Text-Preprocessing-Data/apostrophe.csv")
+        self.emoticons_df = pd.read_csv("src/Text-Preprocessing-Data/emoticons.csv")
 
         # Create dictionaries from dataframes
         self.abbreviations_dict = dict(self.abbreviations_df.values)
