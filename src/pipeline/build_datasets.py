@@ -10,10 +10,13 @@ from src.utils.text_preprocessor import TextPreprocessor
 
 tqdm.pandas()
 
+PWD = os.getcwd()
+
 DATA_VERSION = "0.1v"
+SOURCE_FILE_DIR = f"{PWD}/data/Text_dataset.br"
 
 print("Start load data")
-df = pd.read_parquet("data/Text_dataset.br", engine="pyarrow")
+df = pd.read_parquet(SOURCE_FILE_DIR, engine="pyarrow")
 print("Done Load data\n")
 
 print("Start pre processing")
@@ -39,6 +42,7 @@ def target_encoder(text: str) -> str:
 
 
 print("Start target encoding")
+
 df["target"] = df["clean_text"].progress_apply(target_encoder)
 print("Done target encoding\n")
 
@@ -67,11 +71,12 @@ test_df = data_splitter.optimize_dataframe(test_df)
 print(f"{train_df.info() = }\n")
 print(f"{valid_df.info() = }\n")
 print(f"{test_df.info() = }\n")
+
 print("Done optimize space\n")
 
 print("Start saving datasets")
 
-data_version_folder = f"src/data/{DATA_VERSION}"
+data_version_folder = f"{PWD}/src/data/{DATA_VERSION}"
 
 if not os.path.exists(data_version_folder):
     os.makedirs(data_version_folder)
@@ -96,4 +101,5 @@ test_df.to_parquet(
     compression="brotli",
     index=False,
 )
+
 print("Done saving datasets\n")
