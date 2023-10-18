@@ -11,22 +11,19 @@ from sklearn.metrics import (
 
 
 class ModelReportManager:
-    """_summary_"""
-    def __init__(
-        self, model_version_folder, breach_num, save_reports=True, verbose=True
-    ):
+    """Manager for creating reports and visualizations for model training and evaluation"""
+
+    def __init__(self, model_version_folder, save_reports=True, verbose=True):
         """
         Initialize the ModelReportManager.
 
         Args:
             model_version_folder: The folder where reports are saved.
-            breach_num: An identifier for the model's performance.
             save_reports: If True, reports will be saved to files.
             verbose: If True, reports will be printed to the console.
         """
         self.model_version_folder = model_version_folder
         self.save_reports = save_reports
-        self.breach_num = breach_num
         self.verbose = verbose
 
     def plot_training_history(
@@ -60,13 +57,9 @@ class ModelReportManager:
         )
 
         if self.save_reports:
-            csv_file_name = (
-                f"{self.model_version_folder}/training_history+{self.breach_num}.csv"
-            )
+            csv_file_name = f"{self.model_version_folder}/training_history.csv"
             history_data.to_csv(csv_file_name, index=False)
-            plt.savefig(
-                f"{self.model_version_folder}/Training&Validation-Losses+{self.breach_num}.png"
-            )
+            plt.savefig(f"{self.model_version_folder}/Training&Validation-Losses.png")
         if self.verbose:
             self._print_verbose("Losses vs epoch", history_data)
 
@@ -118,7 +111,7 @@ class ModelReportManager:
             true_labels, predicted_labels, target_names=target_names
         )
         if self.save_reports:
-            file_path = f"{self.model_version_folder}/report+{self.breach_num}.txt"
+            file_path = f"{self.model_version_folder}/report.txt"
 
             with open(file_path, "w", encoding="utf-8") as file:
                 file.write(report)
@@ -142,9 +135,7 @@ class ModelReportManager:
         plt.grid(False)
 
         if self.save_reports:
-            plt.savefig(
-                f"{self.model_version_folder}/ConfusionMatrixDisplay+{self.breach_num}.png"
-            )
+            plt.savefig(f"{self.model_version_folder}/ConfusionMatrixDisplay.png")
         if self.verbose:
             self._print_verbose("Confusion Matrix", conf_mat)
 
