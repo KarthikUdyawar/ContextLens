@@ -11,28 +11,21 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from src.utils.custom_BERT_classifier import CustomBERTClassifier
-from src.utils.data_frame_batch_loader import DataFrameBatchLoader
 from src.utils.model_report import ModelReportManager
 from src.utils.text_dataset import TextDataset
 
 PWD = os.getcwd()
 
-DATA_VER = "0.1v"
-MODEL_VER = "0.1v"
+DATA_VER = "0.2v"
+MODEL_VER = "0.2v"
 
-BREACH_NUM = 0
-BATCH_SIZE = 6 * 5000
-NUM_EPOCHS = 50
-ACCEPTABLE_ACC = 0.85
+NUM_EPOCHS = 50  # 50build_model.py
+ACCEPTABLE_ACC = 0.850  # 0.85
 
 SAVE_MODEL_REPORTS = True
 
-model_version_folder = f"{PWD}/src/model/{MODEL_VER}/checkpoint_{BREACH_NUM}"
-last_model_version_folder = f"{PWD}/src/model/{MODEL_VER}/checkpoint_{BREACH_NUM-1}"
-last_model_file_name = (
-    f"{last_model_version_folder}/model_checkpoint+{BREACH_NUM-1}.pth"
-)
-model_file_name = f"{model_version_folder}/model_checkpoint+{BREACH_NUM}.pth"
+model_version_folder = f"{PWD}/src/model/{MODEL_VER}"
+model_file_name = f"{model_version_folder}/model.pth"
 
 if not os.path.exists(model_version_folder):
     os.makedirs(model_version_folder)
@@ -46,20 +39,6 @@ train_df = pd.read_parquet(train_file_path, engine="pyarrow")
 valid_df = pd.read_parquet(valid_file_path, engine="pyarrow")
 test_df = pd.read_parquet(test_file_path, engine="pyarrow")
 print("Done Load dataset\n")
-
-train_df_batches = DataFrameBatchLoader(train_df, BATCH_SIZE, stratify_col="target")
-valid_df_batches = DataFrameBatchLoader(valid_df, BATCH_SIZE)
-test_df_batches = DataFrameBatchLoader(test_df, BATCH_SIZE)
-
-try:
-    train_df = train_df_batches[BREACH_NUM]
-    valid_df = valid_df_batches[BREACH_NUM]
-    test_df = test_df_batches[BREACH_NUM]
-except IndexError as e:
-    print(e)
-
-
-print(f"Batch: {BREACH_NUM}/{len(train_df_batches)}")
 
 print(train_df.target.value_counts())
 print(valid_df.target.value_counts())
@@ -99,17 +78,6 @@ optimizer = Adam(model.parameters(), lr=1e-5)
 criterion = BCEWithLogitsLoss()
 
 model.to(device)
-
-if os.path.exists(last_model_file_name):
-    # File exists, so load the model checkpoint
-    checkpoint = torch.load(last_model_file_name)
-    model.load_state_dict(checkpoint["model_state_dict"])
-    optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
-    epoch = checkpoint["epoch"]
-    loss = checkpoint["loss"]
-    print("Model loaded")
-else:
-    print("=== Model not found ===")
 
 
 def get_accuracy(predictions: torch.Tensor, real_values: torch.Tensor) -> float:
@@ -318,7 +286,7 @@ print("Done test Model")
 print("Getting reports")
 
 report_manager = ModelReportManager(
-    model_version_folder, BREACH_NUM, save_reports=SAVE_MODEL_REPORTS
+    model_version_folder, save_reports=SAVE_MODEL_REPORTS
 )
 
 # Assuming you have your data and model ready
