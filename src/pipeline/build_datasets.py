@@ -12,12 +12,14 @@ tqdm.pandas()
 
 PWD = os.getcwd()
 
-DATA_VERSION = "0.1v"
-SOURCE_FILE_DIR = f"{PWD}/data/Text_dataset.br"
+BATCH_SIZE = 6 * 5000 # 6 * 5000
+DATA_VERSION = "0.2v"
+SOURCE_FILE_DIR = f"{PWD}/artifacts/Text_dataset.br"
 DATA_VERSION_DIR = f"{PWD}/src/data/{DATA_VERSION}"
 
 print("Start load data")
 df = pd.read_parquet(SOURCE_FILE_DIR, engine="pyarrow")
+df = df.sample(BATCH_SIZE, random_state=42)
 print("Done Load data\n")
 
 print("Start pre processing")
