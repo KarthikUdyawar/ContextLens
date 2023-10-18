@@ -33,9 +33,10 @@ class TextSentimentClassifier:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         if self.device.type != "cuda":
             print("=== GPU not found ===")
+            print(f"Device found {self.device}")
         self.model.to(self.device)
         if os.path.exists(model_checkpoint_file):
-            checkpoint = torch.load(model_checkpoint_file)
+            checkpoint = torch.load(model_checkpoint_file, map_location=self.device)
             self.model.load_state_dict(checkpoint["model_state_dict"])
             print("Model loaded")
         else:
