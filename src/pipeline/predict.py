@@ -33,9 +33,10 @@ class TextSentimentClassifier:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         if self.device.type != "cuda":
             print("=== GPU not found ===")
+            print(f"Device found {self.device}")
         self.model.to(self.device)
         if os.path.exists(model_checkpoint_file):
-            checkpoint = torch.load(model_checkpoint_file)
+            checkpoint = torch.load(model_checkpoint_file, map_location=self.device)
             self.model.load_state_dict(checkpoint["model_state_dict"])
             print("Model loaded")
         else:
@@ -66,8 +67,8 @@ class TextSentimentClassifier:
         Returns:
             str or list: The predicted sentiment label or probabilities.
         """
-        clean_text = self.preprocess_text(input_text)
-        text_dataset = TextDataset([clean_text])
+        _clean_text = self.preprocess_text(input_text)
+        text_dataset = TextDataset([_clean_text])
         self.model = self.model.eval()
         with torch.no_grad():
             input_ids = text_dataset[0]["input_ids"].unsqueeze(0).to(self.device)
@@ -79,17 +80,18 @@ class TextSentimentClassifier:
         y_pred_prob = torch.softmax(outputs, dim=1).cpu().numpy()[0]
         y_pred = torch.argmax(outputs, axis=1).cpu().numpy()[0]
 
-        result = "positive" if y_pred == 2 else "negative" if y_pred == 0 else "neutral"
+        _result = "positive" if y_pred == 2 else "negative" if y_pred == 0 else "neutral"
 
-        return y_pred_prob if return_probabilities else result
+        return y_pred_prob if return_probabilities else _result
 
 
 if __name__ == "__main__":
+    # pylint: disable=invalid-name
     file_name = "src/model/0.1v/checkpoint_6/model_checkpoint+6.pth"
     classifier = TextSentimentClassifier(file_name)
-    input_text = str(input("> "))
-    print(f"Input Text: {input_text}")
-    clean_text = classifier.preprocess_text(input_text)
+    user_text = str(input("> "))
+    print(f"User Text: {user_text}")
+    clean_text = classifier.preprocess_text(user_text)
     print(f"Cleaned Text: {clean_text}")
-    result = classifier.classify_sentiment(input_text, return_probabilities=True)
+    result = classifier.classify_sentiment(clean_text, return_probabilities=True)
     print(f"Sentiment: {result}")

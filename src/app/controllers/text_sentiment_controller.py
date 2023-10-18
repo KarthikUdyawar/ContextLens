@@ -5,8 +5,8 @@ from src.app.interfaces.text_sentiment_interface import (CleanTextResponse,
                                                          TextResponse)
 from src.pipeline.predict import TextSentimentClassifier
 
-file_name = "src/model/0.1v/checkpoint_6/model_checkpoint+6.pth"
-classifier = TextSentimentClassifier(file_name)
+MODEL_FILE_PATH = "src/model/0.2v/model.pth"
+classifier = TextSentimentClassifier(MODEL_FILE_PATH)
 
 
 def clean_user_text(request: TextRequest) -> CleanTextResponse:

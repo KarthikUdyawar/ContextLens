@@ -10,10 +10,16 @@ from src.utils.text_preprocessor import TextPreprocessor
 
 tqdm.pandas()
 
-DATA_VERSION = "0.1v"
+PWD = os.getcwd()
+
+BATCH_SIZE = 6 * 5000 # 6 * 5000
+DATA_VERSION = "0.2v"
+SOURCE_FILE_DIR = f"{PWD}/artifacts/Text_dataset.br"
+DATA_VERSION_DIR = f"{PWD}/src/data/{DATA_VERSION}"
 
 print("Start load data")
-df = pd.read_parquet("data/Text_dataset.br", engine="pyarrow")
+df = pd.read_parquet(SOURCE_FILE_DIR, engine="pyarrow")
+df = df.sample(BATCH_SIZE, random_state=42)
 print("Done Load data\n")
 
 print("Start pre processing")
@@ -39,6 +45,7 @@ def target_encoder(text: str) -> str:
 
 
 print("Start target encoding")
+
 df["target"] = df["clean_text"].progress_apply(target_encoder)
 print("Done target encoding\n")
 
@@ -67,33 +74,34 @@ test_df = data_splitter.optimize_dataframe(test_df)
 print(f"{train_df.info() = }\n")
 print(f"{valid_df.info() = }\n")
 print(f"{test_df.info() = }\n")
+
 print("Done optimize space\n")
 
 print("Start saving datasets")
 
-data_version_folder = f"src/data/{DATA_VERSION}"
 
-if not os.path.exists(data_version_folder):
-    os.makedirs(data_version_folder)
+if not os.path.exists(DATA_VERSION_DIR):
+    os.makedirs(DATA_VERSION_DIR)
 
 train_df.to_parquet(
-    os.path.join(data_version_folder, "train_data.parquet"),
+    os.path.join(DATA_VERSION_DIR, "train_data.parquet"),
     engine="pyarrow",
     compression="brotli",
     index=False,
 )
 
 valid_df.to_parquet(
-    os.path.join(data_version_folder, "valid_data.parquet"),
+    os.path.join(DATA_VERSION_DIR, "valid_data.parquet"),
     engine="pyarrow",
     compression="brotli",
     index=False,
 )
 
 test_df.to_parquet(
-    os.path.join(data_version_folder, "test_data.parquet"),
+    os.path.join(DATA_VERSION_DIR, "test_data.parquet"),
     engine="pyarrow",
     compression="brotli",
     index=False,
 )
+
 print("Done saving datasets\n")

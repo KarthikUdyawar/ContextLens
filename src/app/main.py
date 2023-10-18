@@ -6,7 +6,7 @@ from src.app.routers.text_sentiment_router import router
 app = FastAPI(
     title="Text Sentiment Analysis API",
     description="An API for analyzing the sentiment of text using FastAPI",
-    version="1.0.0",
+    version="1.0.1",
     openapi_url="/openapi.json",
     redoc_url="/redoc",
     docs_url="/docs",
