@@ -87,8 +87,8 @@ class TextSentimentClassifier:
 
 if __name__ == "__main__":
     # pylint: disable=invalid-name
-    file_name = "src/model/0.1v/checkpoint_6/model_checkpoint+6.pth"
-    classifier = TextSentimentClassifier(file_name)
+    MODEL_FILE_PATH = "src/model/0.2v/model.pth"
+    classifier = TextSentimentClassifier(MODEL_FILE_PATH)
     user_text = str(input("> "))
     print(f"User Text: {user_text}")
     clean_text = classifier.preprocess_text(user_text)
