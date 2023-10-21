@@ -217,6 +217,8 @@ The project now includes an API powered by [FastAPI](https://fastapi.tiangolo.co
 A Docker image for the contextlens API is available on [Docker Hub](https://hub.docker.com/r/kstar123/contextlens). You can pull and run the image using the following command:
 
 ```bash
+docker pull ghcr.io/karthikudyawar/contextlens:1.0
+# or
 docker pull kstar123/contextlens:1.0
 
 docker run -d -p 8000:8000 --name contextlens-api kstar123/contextlens:1.0
