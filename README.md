@@ -9,7 +9,7 @@
 
 [![Logo][product-screenshot]](https://github.com/KarthikUdyawar/ContextLens)
 
-[product-screenshot]: img\logo.png
+[product-screenshot]: img/logo.png
 
 Reveal Emotions with Context
 
