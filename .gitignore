@@ -160,3 +160,8 @@ cython_debug/
 #.idea/
 
 backups/
+raw_data/
+.vscode/
+intermediate_data/
+*.parquet
+*.pth
