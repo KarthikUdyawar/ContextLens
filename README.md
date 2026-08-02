@@ -13,30 +13,33 @@
 
 Reveal Emotions with Context
 
-[**Explore the docs »**](https://github.com/KarthikUdyawar/ContextLens)
+[**Explore the docs »**](docs/)
 
 [View Demo](https://github.com/KarthikUdyawar/ContextLens)
 ·
 [Report Bug](https://github.com/KarthikUdyawar/ContextLens/issues)
 ·
-[Request Feature](https://github.com/KarthikUdyawar/c/pulls)
+[Request Feature](https://github.com/KarthikUdyawar/ContextLens/issues)
 
 </div>
 
 ## Table of Contents
 
-- [About The Project](#about-the-project)
-  - [Built With](#built-with)
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-- [Usage](#usage)
-  - [GUI Usage](#gui-usage)
-  - [API Usage](#api-usage)
-- [Docker Image](#docker-image)
-- [Contributing](#contributing)
-- [License](#license)
-- [Contact](#contact)
+- [ContextLens](#contextlens)
+  - [Table of Contents](#table-of-contents)
+  - [About The Project](#about-the-project)
+    - [Built With](#built-with)
+  - [Getting Started](#getting-started)
+    - [Prerequisites](#prerequisites)
+    - [Installation](#installation)
+  - [Usage](#usage)
+    - [GUI Usage](#gui-usage)
+    - [API Usage](#api-usage)
+  - [Docker Image](#docker-image)
+  - [Documentation](#documentation)
+  - [Contributing](#contributing)
+  - [License](#license)
+  - [Contact](#contact)
 
 ## About The Project
 
@@ -227,6 +230,30 @@ docker run -d -p 8000:8000 --name contextlens-api kstar123/contextlens:1.0
 This will start the FastAPI server inside a Docker container, and you can access the API endpoints at [http://localhost:8000](http://localhost:8000).
 
 _For more details on using Docker, refer to the [Docker documentation](https://docs.docker.com/)._
+
+## Documentation
+
+[#documentation](#documentation)
+
+A full baseline doc set lives in [`docs/`](docs/), covering architecture, the training/serving pipeline, model internals, API contracts, and a running list of known issues:
+
+| Doc                                     | Covers                                                    |
+| --------------------------------------- | --------------------------------------------------------- |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | System layers, components, request path                   |
+| [PIPELINE.md](docs/PIPELINE.md)         | Data → training → serving flow                            |
+| [MODELS.md](docs/MODELS.md)             | Model architecture, checkpoints, known correctness issues |
+| [SERVICES.md](docs/SERVICES.md)         | FastAPI service structure and startup behavior            |
+| [API_DOC.md](docs/API_DOC.md)           | Endpoint contracts and examples                           |
+| [STORAGE.md](docs/STORAGE.md)           | What's committed vs. gitignored, and why                  |
+| [INFRA.md](docs/INFRA.md)               | Docker, CI status, deployment gaps                        |
+| [DESIGN.md](docs/DESIGN.md)             | Module and pipeline design decisions                      |
+| [DECISIONS.md](docs/DECISIONS.md)       | Numbered log of known bugs and gaps                       |
+| [PRD.md](docs/PRD.md)                   | Retrospective product requirements                        |
+| [USER-FLOW.md](docs/USER-FLOW.md)       | API/CLI/GUI/notebook user flows                           |
+| [ROADMAP.md](docs/ROADMAP.md)           | v1.0.0 status and confirmed v2.0.0 direction              |
+| [TODO.md](docs/TODO.md)                 | Open items                                                |
+| [PROJECT.tree](docs/PROJECT.tree)       | Annotated repo layout                                     |
+| [handoff.md](docs/handoff.md)           | Summary for picking this project back up                  |
 
 ## Contributing
 

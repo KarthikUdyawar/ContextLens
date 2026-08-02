@@ -1,11 +1,12 @@
 """Tkinter-based app for text sentiment analysis"""
+
 import tkinter as tk
 
 import numpy as np
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 
-from src.pipeline.predict import TextSentimentClassifier
+from src.pipeline.predict import ModelNotReadyError, TextSentimentClassifier
 
 
 class SentimentAnalysisApp:
@@ -64,10 +65,16 @@ class SentimentAnalysisApp:
         """
         user_text = self.text_widget.get("1.0", "end-1c")
         clean_text = self.classifier.preprocess_text(user_text)
-        result_prob = self.classifier.classify_sentiment(
-            clean_text, return_probabilities=True
-        )
-        result = self.classifier.classify_sentiment(clean_text)
+        try:
+            result_prob = self.classifier.classify_sentiment(
+                clean_text, return_probabilities=True
+            )
+            result = self.classifier.classify_sentiment(clean_text)
+        except ModelNotReadyError as exc:
+            self.result_label.config(text=f"Error: {exc}")
+            self.ax.clear()
+            self.canvas.draw()
+            return
         self.result_label.config(text=f"Sentiment: {result}")
 
         # Update the radar chart
@@ -81,6 +88,7 @@ class SentimentAnalysisApp:
         """
         self.ax.clear()
 
+        probabilities = np.asarray(probabilities)
         categories = ["Negative", "Neutral", "Positive"]
         N = len(categories)
         angles = [n / float(N) * 2 * np.pi for n in range(N)]

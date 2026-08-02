@@ -33,7 +33,7 @@ def predict_sentiment(request: TextRequest) -> TextResponse:
     """
     input_text = request.text
     cleaned_text = classifier.preprocess_text(input_text)
-    result = classifier.classify_sentiment(input_text, return_probabilities=False)
+    result = classifier.classify_sentiment(cleaned_text, return_probabilities=False)
     return TextResponse(cleaned_text=cleaned_text, sentiment=result)
 
 
@@ -48,5 +48,5 @@ def predict_prob_sentiment(request: TextRequest) -> TextResponse:
     """
     input_text = request.text
     cleaned_text = classifier.preprocess_text(input_text)
-    result = classifier.classify_sentiment(input_text, return_probabilities=True)
+    result = classifier.classify_sentiment(cleaned_text, return_probabilities=True)
     return TextProbResponse(cleaned_text=cleaned_text, sentiment_prob=result)

@@ -15,12 +15,16 @@ def main():
         clean_text = classifier.preprocess_text(user_text)
         print(f"Cleaned Text: {clean_text}", end="\n\n")
 
-        result = classifier.classify_sentiment(clean_text)
-        print(f"Sentiment: {result}", end="\n\n")
+        try:
+            result = classifier.classify_sentiment(clean_text)
+            result_prob = classifier.classify_sentiment(
+                clean_text, return_probabilities=True
+            )
+        except RuntimeError as exc:
+            print(f"Cannot classify: {exc}", end="\n\n")
+            break
 
-        result_prob = classifier.classify_sentiment(
-            clean_text, return_probabilities=True
-        )
+        print(f"Sentiment: {result}", end="\n\n")
         print(f"Sentiment probability: {result_prob}", end="\n\n")
 
         choice = input("Try again (Y/n): ")

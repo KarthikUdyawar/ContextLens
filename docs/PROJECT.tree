@@ -1,0 +1,68 @@
+ContextLens/ (v1.0.0 baseline)
+├── artifacts/
+│   └── Text_dataset.br
+├── docs/
+│   ├── API_DOC.md
+│   ├── ARCHITECTURE.md
+│   ├── DECISIONS.md
+│   ├── DESIGN.md
+│   ├── handoff.md
+│   ├── INFRA.md
+│   ├── MODELS.md
+│   ├── PIPELINE.md
+│   ├── PRD.md
+│   ├── PROJECT.tree
+│   ├── ROADMAP.md
+│   ├── SERVICES.md
+│   ├── STORAGE.md
+│   ├── TODO.md
+│   └── USER-FLOW.md
+├── examples/
+│   ├── basic.py
+│   └── gui.py
+├── img/
+│   ├── icon.ico
+│   ├── icon.png
+│   ├── logo.png
+│   ├── meter.png
+│   └── screenshot.png
+├── notebook/
+│   ├── 01_get_data.ipynb
+│   ├── 02_clean_text.ipynb
+│   ├── 03_eda.ipynb
+│   └── 04_train_model.ipynb
+├── src/
+│   ├── app/
+│   │   ├── controllers/
+│   │   │   └── text_sentiment_controller.py
+│   │   ├── interfaces/
+│   │   │   └── text_sentiment_interface.py
+│   │   ├── routers/
+│   │   │   └── text_sentiment_router.py
+│   │   └── main.py
+│   ├── model/
+│   │   ├── 0.1v/checkpoint_0 … checkpoint_6/   (reports + plots, no weights)
+│   │   └── 0.2v/                               (reports + plots, no weights)
+│   ├── pipeline/
+│   │   ├── build_datasets.py
+│   │   ├── build_model.py
+│   │   └── predict.py
+│   ├── Text-Preprocessing-Data/
+│   │   ├── abbreviations.csv
+│   │   ├── apostrophe.csv
+│   │   └── emoticons.csv
+│   └── utils/
+│       ├── custom_BERT_classifier.py
+│       ├── data_frame_batch_loader.py
+│       ├── model_report.py
+│       ├── split_data.py
+│       ├── text_dataset.py
+│       └── text_preprocessor.py
+├── Dockerfile
+├── docker-compose.yml
+├── dev-requirements.txt
+├── requirements.txt
+├── setup.py
+└── README.md
+
+Not present (gitignored, must be generated/fetched): src/data/{version}/*.parquet, src/model/{version}/model.pth
