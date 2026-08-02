@@ -4,7 +4,7 @@
 
 `CustomBERTClassifier` (`src/utils/custom_BERT_classifier.py`):
 
-```
+```text
 bert-base-uncased (pretrained, fine-tuned)
   → CLS token embedding (768-d)
   → Linear(768, 128) → ReLU → Dropout(0.2)
@@ -26,7 +26,7 @@ No committed weights means **no model ships with the repo** — this is the most
 
 ## Known correctness issues
 
-1. **Double softmax.** The model's `forward()` already applies `Softmax`. `predict.py::classify_sentiment` calls `torch.softmax()` again on the output. Argmax label is unaffected (softmax is monotonic), but reported probabilities in `/predict-prob` are miscalibrated.
+1. ~~Double softmax.~~ **Fixed v1.0.1** (DECISIONS.md #1) — historical note only. `forward()`'s single `Softmax` output is now used directly by `predict.py::classify_sentiment`; no re-softmax on top.
 2. **Loss/activation mismatch.** Training uses `BCEWithLogitsLoss` (expects raw logits, treats classes independently) against a model whose output is already softmax-normalized (mutually-exclusive, bounded [0,1], sums to 1). Standard practice for single-label 3-class classification is `CrossEntropyLoss` on raw logits with no softmax in the model. Current setup can still learn but the loss landscape doesn't match the stated single-label problem.
 3. **Labels are TextBlob polarity heuristics**, not human-annotated ground truth (see PIPELINE.md). Reported accuracy (gate: `>0.85`) is measured against this same heuristic, not an independent test set.
 

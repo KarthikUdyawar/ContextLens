@@ -10,8 +10,6 @@
 
 ## v1.0.1 — patch pass (session 2)
 
-## v1.0.1 — patch pass (session 2)
-
 Answers the "land before 2.0 or bundle into 2.0" question below: landed now, as a patch pass, not deferred.
 
 - `DECISIONS.md` #1, #3–#6, #8–#12 fixed — see `DECISIONS.md` for per-item detail, `TODO.md` for the checklist.

@@ -1,4 +1,6 @@
 """Text Sentiment Classifier for Sentiment Analysis"""
+
+import logging
 import os
 
 import torch
@@ -6,6 +8,12 @@ import torch
 from src.utils.custom_BERT_classifier import CustomBERTClassifier
 from src.utils.text_dataset import TextDataset, get_tokenizer
 from src.utils.text_preprocessor import TextPreprocessor
+
+logger = logging.getLogger(__name__)
+
+
+class ModelNotReadyError(RuntimeError):
+    """Raised when inference is attempted but the checkpoint never loaded."""
 
 
 class TextSentimentClassifier:
@@ -35,13 +43,22 @@ class TextSentimentClassifier:
             print("=== GPU not found ===")
             print(f"Device found {self.device}")
         self.model.to(self.device)
+
+        self.model_loaded = False
         if os.path.exists(model_checkpoint_file):
-            checkpoint = torch.load(model_checkpoint_file, map_location=self.device)
-            self.model.load_state_dict(checkpoint["model_state_dict"])
-            self.model_loaded = True
-            print("Model loaded")
+            try:
+                checkpoint = torch.load(model_checkpoint_file, map_location=self.device)
+                self.model.load_state_dict(checkpoint["model_state_dict"])
+                self.model_loaded = True
+                print("Model loaded")
+            except Exception:
+                # Corrupt/incompatible checkpoint: log, stay degraded, don't crash
+                # module import (FastAPI must still start and serve /health).
+                logger.exception(
+                    "Failed to load checkpoint at %s; serving in degraded mode.",
+                    model_checkpoint_file,
+                )
         else:
-            self.model_loaded = False
             print("Model not loaded.")
         self.preprocessor = TextPreprocessor()
         self.tokenizer = get_tokenizer()
@@ -64,9 +81,9 @@ class TextSentimentClassifier:
 
         Text is preprocessed exactly once, by the caller (via `preprocess_text`),
         not again inside this method (DECISIONS.md #3).
-        
+
         Args:
-            cleaned_text (str): Text that has already been run through `preprocess_text`.            
+            cleaned_text (str): Text that has already been run through `preprocess_text`.
             return_probabilities (bool, optional): Whether to return sentiment probabilities.
             Defaults to False.
 
@@ -74,7 +91,7 @@ class TextSentimentClassifier:
             str or list: The predicted sentiment label or probabilities.
         """
         if not self.model_loaded:
-            raise RuntimeError(
+            raise ModelNotReadyError(
                 "Model checkpoint was not loaded; refusing to serve predictions "
                 "from randomly-initialized weights (DECISIONS.md #4)."
             )
@@ -92,7 +109,9 @@ class TextSentimentClassifier:
         y_pred_prob = outputs.cpu().numpy()[0]
         y_pred = torch.argmax(outputs, axis=1).cpu().numpy()[0]
 
-        _result = "positive" if y_pred == 2 else "negative" if y_pred == 0 else "neutral"
+        _result = (
+            "positive" if y_pred == 2 else "negative" if y_pred == 0 else "neutral"
+        )
 
         return y_pred_prob.tolist() if return_probabilities else _result
 

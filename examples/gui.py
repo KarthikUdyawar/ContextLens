@@ -1,11 +1,12 @@
 """Tkinter-based app for text sentiment analysis"""
+
 import tkinter as tk
 
 import numpy as np
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 
-from src.pipeline.predict import TextSentimentClassifier
+from src.pipeline.predict import ModelNotReadyError, TextSentimentClassifier
 
 
 class SentimentAnalysisApp:
@@ -69,8 +70,10 @@ class SentimentAnalysisApp:
                 clean_text, return_probabilities=True
             )
             result = self.classifier.classify_sentiment(clean_text)
-        except RuntimeError as exc:
+        except ModelNotReadyError as exc:
             self.result_label.config(text=f"Error: {exc}")
+            self.ax.clear()
+            self.canvas.draw()
             return
         self.result_label.config(text=f"Sentiment: {result}")
 

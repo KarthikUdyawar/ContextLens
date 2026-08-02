@@ -2,9 +2,9 @@
 
 ## FastAPI service (`src/app`)
 
-Single service, single process. `uvicorn src.app.main:app`.
+Local dev: single process, `uvicorn src.app.main:app`. Container: `--workers 1` (Dockerfile, updated v1.0.1) — one worker per container so `/health`'s `model_loaded` state reflects the whole container; scale via replicas, not `--workers`, to avoid per-worker readiness drift and untested classifier memory/GPU contention under multiple in-process model copies.
 
-```
+```text
 main.py            — app instance, mounts router, GET /
 routers/           — text_sentiment_router.py: 3 POST routes
 controllers/        — text_sentiment_controller.py: request handling, calls classifier

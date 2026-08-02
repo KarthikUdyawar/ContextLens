@@ -5,7 +5,7 @@
 1. `docker compose up` (or `uvicorn src.app.main:app`).
 2. `POST /predict/` with `{"text": "..."}`.
 3. Reads back `{cleaned_text, sentiment}`.
-4. Optionally `POST /predict-prob/` for class confidences (currently miscalibrated — DECISIONS.md #1).
+4. Optionally `POST /predict-prob/` for class confidences.
 
 No auth, no rate limit — flow has no failure/retry branch defined beyond FastAPI's default validation errors.
 

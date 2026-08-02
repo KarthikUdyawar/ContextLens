@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 
 from src.app.controllers.text_sentiment_controller import classifier
 from src.app.routers.text_sentiment_router import router
+from src.pipeline.predict import ModelNotReadyError
 
 APP_VERSION = "1.0.1"  # keep in sync with setup.py's `version=` (DECISIONS.md #11)
 
@@ -19,22 +20,24 @@ app = FastAPI(
     docs_url="/docs",
 )
 
-# No browser frontend exists yet in v1.0.0, but the 2.0 Streamlit UI needs this
-# and there's no reason to gate it on that landing (DECISIONS.md #9).
+# allow_credentials=False: no auth/cookie flow exists yet, and browsers reject
+# allow_origins=["*"] + allow_credentials=True anyway (DECISIONS.md #9).
+# Revisit origin allowlist + credentials together once Streamlit needs auth.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-@app.exception_handler(RuntimeError)
-async def model_not_loaded_handler(_request: Request, exc: RuntimeError):
-    """Turn the "checkpoint not loaded" RuntimeError from `classify_sentiment`
-    into a clean 503 instead of an unhandled 500 + traceback (DECISIONS.md #4).
-    """
-    return JSONResponse(status_code=503, content={"detail": str(exc)})
+
+@app.exception_handler(ModelNotReadyError)
+async def model_not_ready_handler(_request: Request, _exc: ModelNotReadyError):
+    """Checkpoint didn't load -> 503, fixed public detail (no internal exc text leaked)."""
+    return JSONResponse(
+        status_code=503, content={"detail": "Service unavailable: model not ready."}
+    )
 
 
 @app.get("/")
@@ -54,7 +57,8 @@ async def health(response: Response):
     Reports the real checkpoint-loaded state (DECISIONS.md #4) rather than
     just "the process didn't crash" — returns HTTP 503 when the model
     checkpoint failed to load, since `/predict` would otherwise be serving
-    from randomly-initialized weights.
+    from randomly-initialized weights. Accurate per-process; run one worker
+    per container (see Dockerfile) so this reflects the whole container.
 
     Returns:
         dict: Service status, model-loaded flag, and version.

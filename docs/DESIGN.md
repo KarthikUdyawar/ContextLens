@@ -2,7 +2,7 @@
 
 ## Layered API design
 
-`router → controller → interface (pydantic) → classifier`. Standard FastAPI split. Router owns HTTP verbs/paths, controller owns request handling, interface owns validation/schema, classifier owns ML logic. Clean separation on paper; broken in practice by the module-level global classifier (ARCHITECTURE.md) which couples controller import to model load.
+`router → interface (pydantic) → controller → classifier`. Standard FastAPI split. Router owns HTTP verbs/paths, interface owns validation/schema (FastAPI validates the request body against it before the controller runs), controller owns request handling, classifier owns ML logic. Clean separation on paper; broken in practice by the module-level global classifier (ARCHITECTURE.md) which couples controller import to model load.
 
 ## Preprocessing as a shared, deterministic step
 
