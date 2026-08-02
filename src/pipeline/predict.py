@@ -4,7 +4,7 @@ import os
 import torch
 
 from src.utils.custom_BERT_classifier import CustomBERTClassifier
-from src.utils.text_dataset import TextDataset
+from src.utils.text_dataset import TextDataset, get_tokenizer
 from src.utils.text_preprocessor import TextPreprocessor
 
 
@@ -38,10 +38,13 @@ class TextSentimentClassifier:
         if os.path.exists(model_checkpoint_file):
             checkpoint = torch.load(model_checkpoint_file, map_location=self.device)
             self.model.load_state_dict(checkpoint["model_state_dict"])
+            self.model_loaded = True
             print("Model loaded")
         else:
+            self.model_loaded = False
             print("Model not loaded.")
         self.preprocessor = TextPreprocessor()
+        self.tokenizer = get_tokenizer()
 
     def preprocess_text(self, input_text: str) -> str:
         """Preprocess the input text for sentiment analysis.
@@ -55,20 +58,27 @@ class TextSentimentClassifier:
         return self.preprocessor.preprocessing(input_text)
 
     def classify_sentiment(
-        self, input_text: str, return_probabilities: bool = False
+        self, cleaned_text: str, return_probabilities: bool = False
     ) -> str | list:
-        """Predict the sentiment of the input text and return the result.
+        """Predict the sentiment of already-cleaned text and return the result.
 
+        Text is preprocessed exactly once, by the caller (via `preprocess_text`),
+        not again inside this method (DECISIONS.md #3).
+        
         Args:
-            input_text (str): The text for which sentiment should be classified.
+            cleaned_text (str): Text that has already been run through `preprocess_text`.            
             return_probabilities (bool, optional): Whether to return sentiment probabilities.
             Defaults to False.
 
         Returns:
             str or list: The predicted sentiment label or probabilities.
         """
-        _clean_text = self.preprocess_text(input_text)
-        text_dataset = TextDataset([_clean_text])
+        if not self.model_loaded:
+            raise RuntimeError(
+                "Model checkpoint was not loaded; refusing to serve predictions "
+                "from randomly-initialized weights (DECISIONS.md #4)."
+            )
+        text_dataset = TextDataset([cleaned_text], tokenizer=self.tokenizer)
         self.model = self.model.eval()
         with torch.no_grad():
             input_ids = text_dataset[0]["input_ids"].unsqueeze(0).to(self.device)
@@ -77,12 +87,14 @@ class TextSentimentClassifier:
             )
             outputs = self.model(input_ids, attention_mask)
 
-        y_pred_prob = torch.softmax(outputs, dim=1).cpu().numpy()[0]
+        # `outputs` is already softmax-normalized inside CustomBERTClassifier.forward();
+        # do NOT softmax again here (DECISIONS.md #1).
+        y_pred_prob = outputs.cpu().numpy()[0]
         y_pred = torch.argmax(outputs, axis=1).cpu().numpy()[0]
 
         _result = "positive" if y_pred == 2 else "negative" if y_pred == 0 else "neutral"
 
-        return y_pred_prob if return_probabilities else _result
+        return y_pred_prob.tolist() if return_probabilities else _result
 
 
 if __name__ == "__main__":

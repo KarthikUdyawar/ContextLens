@@ -2,11 +2,16 @@
 removing mentions, links, and emojis, converting text to lowercase, and more.
 """
 import html
+import os
 import re
 
 import emoji
 import pandas as pd
 
+# src/utils/text_preprocessor.py -> src/Text-Preprocessing-Data/, independent of cwd
+_LOOKUP_DIR = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "..", "Text-Preprocessing-Data"
+)
 
 class TextPreprocessor:
     """Converts raw text into clean text"""
@@ -15,10 +20,10 @@ class TextPreprocessor:
         """Initialize the preprocessor"""
         # Load abbreviation, apostrophe, and emoticon data
         self.abbreviations_df = pd.read_csv(
-            "src/Text-Preprocessing-Data/abbreviations.csv"
+            os.path.join(_LOOKUP_DIR, "abbreviations.csv")
         )
-        self.apostrophe_df = pd.read_csv("src/Text-Preprocessing-Data/apostrophe.csv")
-        self.emoticons_df = pd.read_csv("src/Text-Preprocessing-Data/emoticons.csv")
+        self.apostrophe_df = pd.read_csv(os.path.join(_LOOKUP_DIR, "apostrophe.csv"))
+        self.emoticons_df = pd.read_csv(os.path.join(_LOOKUP_DIR, "emoticons.csv"))
 
         # Create dictionaries from dataframes
         self.abbreviations_dict = dict(self.abbreviations_df.values)
@@ -72,7 +77,7 @@ class TextPreprocessor:
         # Step J : Replacing Punctuations, Special Characters & Numbers (integers) with space
         text = re.sub(r"[^a-z]", " ", text)
         # Step K: Remove whitespace
-        text = re.sub(r"\s+", " ", text)
+        text = re.sub(r"\s+", " ", text).strip()
         return text
 
 

@@ -10,7 +10,10 @@ class TextRequest(BaseModel):
         text (str): The input text for analysis.
     """
 
-    text: str = Field(..., example="This is a sample text for sentiment analysis.")
+    text: str = Field(
+        ...,
+        json_schema_extra={"example": "This is a sample text for sentiment analysis."},
+    )
 
 
 class TextResponse(BaseModel):
@@ -22,9 +25,10 @@ class TextResponse(BaseModel):
     """
 
     cleaned_text: str = Field(
-        ..., example="this is a sample text for sentiment analysis "
+        ...,
+        json_schema_extra={"example": "this is a sample text for sentiment analysis"},
     )
-    sentiment: str = Field(..., example="neutral")
+    sentiment: str = Field(..., json_schema_extra={"example": "neutral"})
 
 
 class TextProbResponse(BaseModel):
@@ -36,12 +40,15 @@ class TextProbResponse(BaseModel):
     """
 
     cleaned_text: str = Field(
-        ..., example="this is a sample text for sentiment analysis "
+        ...,
+        json_schema_extra={"example": "this is a sample text for sentiment analysis"},
     )
     sentiment_prob: list[float] = Field(
         ...,
-        example="[0.21194206178188324,0.5761160254478455,0.2119419425725937] \
-            #position [neg,neu,pos]",
+        json_schema_extra={
+            "example": [0.21194206178188324, 0.5761160254478455, 0.2119419425725937]
+        },
+        description="Order: [negative, neutral, positive]",
     )
 
 
@@ -53,5 +60,6 @@ class CleanTextResponse(BaseModel):
     """
 
     cleaned_text: str = Field(
-        ..., example="this is a sample text for sentiment analysis "
+        ...,
+        json_schema_extra={"example": "this is a sample text for sentiment analysis"},
     )
