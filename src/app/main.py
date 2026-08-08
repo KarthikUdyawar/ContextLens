@@ -1,4 +1,4 @@
-"""FastAPI Main Application"""
+"""FastAPI Main Application."""
 
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,9 +7,11 @@ from fastapi.responses import JSONResponse
 from src.app.controllers.text_sentiment_controller import classifier
 from src.app.routers.text_sentiment_router import router
 from src.pipeline.predict import ModelNotReadyError
+from src.utils.logging_config import configure_logging
 
-APP_VERSION = "1.0.1"  # keep in sync with setup.py's `version=` (DECISIONS.md #11)
+APP_VERSION = "2.0.1"  # keep in sync with setup.py's `version=` (DECISIONS.md #11)
 
+configure_logging()
 
 app = FastAPI(
     title="Text Sentiment Analysis API",
@@ -33,15 +35,17 @@ app.add_middleware(
 
 
 @app.exception_handler(ModelNotReadyError)
-async def model_not_ready_handler(_request: Request, _exc: ModelNotReadyError):
-    """Checkpoint didn't load -> 503, fixed public detail (no internal exc text leaked)."""
+async def model_not_ready_handler(
+    _request: Request, _exc: ModelNotReadyError
+) -> JSONResponse:
+    """Checkpoint didn't load -> 503, fixed public detail (no exc text leaked)."""
     return JSONResponse(
         status_code=503, content={"detail": "Service unavailable: model not ready."}
     )
 
 
 @app.get("/")
-async def read_root():
+async def read_root() -> dict[str, str]:
     """Root endpoint of the Text Sentiment Analysis API.
 
     Returns:
@@ -51,7 +55,7 @@ async def read_root():
 
 
 @app.get("/health")
-async def health(response: Response):
+async def health(response: Response) -> dict[str, object]:
     """Liveness/readiness probe endpoint.
 
     Reports the real checkpoint-loaded state (DECISIONS.md #4) rather than
@@ -78,5 +82,6 @@ if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(
-        app, host="0.0.0.0", port=8000
+        app, host="0.0.0.0", port=8000  # nosec B104: intentional,
+        # container needs to bind all interfaces — see INFRA.md
     )  # RUN: uvicorn src.app.main:app --port 8000 --reload

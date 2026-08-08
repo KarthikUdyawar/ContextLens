@@ -1,4 +1,4 @@
-"""FastAPI Router for Text Sentiment Analysis"""
+"""FastAPI Router for Text Sentiment Analysis."""
 from fastapi import APIRouter
 
 from src.app.controllers.text_sentiment_controller import (
@@ -37,7 +37,8 @@ async def predict_prob_text_sentiment(request: TextRequest) -> TextProbResponse:
         request (TextRequest): Request model containing input text.
 
     Returns:
-        TextProbResponse: Response model containing cleaned text and sentiment probabilities.
+        TextProbResponse: Response model containing cleaned text and
+            sentiment probabilities.
     """
     return predict_prob_sentiment(request)
 

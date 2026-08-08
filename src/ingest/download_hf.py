@@ -1,0 +1,63 @@
+"""Download raw text from confirmed HF sources, land unmodified in MinIO."""
+
+# src/ingest/download_hf.py
+
+import sys
+import tempfile
+
+from datasets import load_dataset
+
+from src.ingest.minio_client import MinioClient
+from src.utils.logging_config import configure_logging, get_logger
+
+logger = get_logger(__name__)
+
+# (dataset name, config) — config=None means no sub-config needed.
+HF_SOURCES: list[tuple[str, str | None]] = [
+    ("sentiment140", None),
+    ("cardiffnlp/tweet_eval", "sentiment"),
+    ("bdstar/twitter-sentiment-analysis", None),
+    ("bdstar/Tweets-Sentiment-Analysis", None),
+]
+
+BUCKET = "raw-data"
+
+
+class HfDownloader:
+    """Downloads confirmed HF sources, lands each raw in MinIO."""
+
+    def __init__(self, minio_client: MinioClient, bucket: str = BUCKET) -> None:
+        """Store the MinIO client to upload through and target bucket."""
+        self._minio_client = minio_client
+        self._bucket = bucket
+
+    def download_all(self) -> list[str]:
+        """Download each configured HF source, upload raw to MinIO.
+
+        Returns names of sources that failed — doesn't stop on one bad source.
+        """
+        failures: list[str] = []
+        for name, config in HF_SOURCES:
+            try:
+                args = (name, config) if config else (name,)
+                # nosec B615: no pinned revision — these 4 sources are fixed,
+                # low-churn public datasets (R8 scope is acquisition only,
+                # no revision-pin policy decided yet). Revisit if source list
+                # grows or datasets prove mutable.
+                dataset = load_dataset(*args, split="train")  # nosec B615
+                with tempfile.NamedTemporaryFile(suffix=".parquet") as tmp:
+                    dataset.to_parquet(tmp.name)
+                    key = f"hf/{name}/data.parquet"
+                    self._minio_client.upload_file(self._bucket, key, tmp.name)
+            except Exception:
+                logger.exception("Failed to download/upload HF source: %s", name)
+                failures.append(name)
+        return failures
+
+
+if __name__ == "__main__":
+    configure_logging()
+    failed = HfDownloader(minio_client=MinioClient()).download_all()
+    if failed:
+        sys.exit(1)
+        

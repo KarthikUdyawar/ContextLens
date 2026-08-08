@@ -1,6 +1,8 @@
-"""Tkinter-based app for text sentiment analysis"""
+"""Tkinter-based app for text sentiment analysis."""
 
 import tkinter as tk
+from collections.abc import Sequence
+from typing import cast
 
 import numpy as np
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -12,16 +14,16 @@ from src.pipeline.predict import ModelNotReadyError, TextSentimentClassifier
 class SentimentAnalysisApp:
     """A simple Tkinter-based app for text sentiment analysis."""
 
-    def __init__(self, root):
-        """
-        Initialize the SentimentAnalysisApp.
+    def __init__(self, root: tk.Tk) -> None:
+        """Initialize the SentimentAnalysisApp.
 
         Args:
             root: The Tkinter root window.
         """
         self.root = root
         self.root.title("Text Sentiment Classifier for Sentiment Analysis")
-        self.root.iconbitmap("img/icon.ico")  # Use the path to your icon file
+        # tkinter stubs leave iconbitmap untyped
+        self.root.iconbitmap("img/icon.ico")  # type: ignore[no-untyped-call]
 
         # Create a frame to hold the widgets
         self.frame = tk.Frame(root)
@@ -59,10 +61,8 @@ class SentimentAnalysisApp:
         self.canvas_widget = self.canvas.get_tk_widget()
         self.canvas_widget.pack(fill="both", expand=True)
 
-    def analyze_sentiment(self):
-        """
-        Analyze the sentiment of the entered text.
-        """
+    def analyze_sentiment(self) -> None:
+        """Analyze the sentiment of the entered text."""
         user_text = self.text_widget.get("1.0", "end-1c")
         clean_text = self.classifier.preprocess_text(user_text)
         try:
@@ -78,9 +78,11 @@ class SentimentAnalysisApp:
         self.result_label.config(text=f"Sentiment: {result}")
 
         # Update the radar chart
-        self.update_radar_chart(result_prob)
+        # classify_sentiment(..., return_probabilities=True) returns list[float]
+        probs = cast(list[float], result_prob)
+        self.update_radar_chart(probs)
 
-    def update_radar_chart(self, probabilities):
+    def update_radar_chart(self, probabilities: Sequence[float]) -> None:
         """Update the radar chart based on sentiment probabilities.
 
         Args:
@@ -88,7 +90,7 @@ class SentimentAnalysisApp:
         """
         self.ax.clear()
 
-        probabilities = np.asarray(probabilities)
+        probs_arr = np.asarray(probabilities)
         categories = ["Negative", "Neutral", "Positive"]
         N = len(categories)
         angles = [n / float(N) * 2 * np.pi for n in range(N)]
@@ -99,21 +101,21 @@ class SentimentAnalysisApp:
         self.ax.set_rlabel_position(0)
 
         # Find the index of the maximum probability
-        max_index = np.argmax(probabilities)
+        max_index = int(np.argmax(probs_arr))
 
         # Define colors based on max probability
         colors = ["red", "yellow", "green"]
 
         self.ax.plot(
             angles,
-            probabilities.tolist() + probabilities.tolist()[:1],
+            probs_arr.tolist() + probs_arr.tolist()[:1],
             "black",
             linewidth=1,
             linestyle="solid",
         )
         self.ax.fill(
             angles,
-            probabilities.tolist() + probabilities.tolist()[:1],
+            probs_arr.tolist() + probs_arr.tolist()[:1],
             alpha=0.5,
             color=colors[max_index],
         )
@@ -125,10 +127,8 @@ class SentimentAnalysisApp:
         self.canvas.draw()
 
 
-def main():
-    """
-    Main function to run the sentiment analysis app.
-    """
+def main() -> None:
+    """Main function to run the sentiment analysis app."""
     root = tk.Tk()
     SentimentAnalysisApp(root)
     root.geometry("800x600")  # Set the initial window size

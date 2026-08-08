@@ -1,5 +1,4 @@
-""""This script performs splitting data into train, validation, and test sets."""
-from typing import Tuple
+"""This script performs splitting data into train, validation, and test sets."""
 
 import numpy as np
 import pandas as pd
@@ -17,14 +16,15 @@ class TrainValidTestSplitter:
         test_size: float = 0.3,
         random_state: int | None = None,
     ):
-        """
-        Initialize the splitter.
+        """Initialize the splitter.
 
         Args:
             X (pd.DataFrame): The feature DataFrame.
             y (pd.Series): The target Series.
-            test_size (float, optional): The proportion of data to include in the test split. Defaults to 0.3.
-            random_state (int | None, optional): Seed for random number generation. Defaults to None.
+            test_size (float, optional): The proportion of data to include
+                in the test split. Defaults to 0.3.
+            random_state (int | None, optional): Seed for random number
+                generation. Defaults to None.
         """
         # Initialize instance variables
         self.X = X
@@ -34,7 +34,7 @@ class TrainValidTestSplitter:
 
     def split_data(
         self,
-    ) -> Tuple[
+    ) -> tuple[
         pd.DataFrame,
         pd.DataFrame,
         pd.DataFrame,
@@ -42,11 +42,11 @@ class TrainValidTestSplitter:
         pd.Series,
         pd.Series,
     ]:
-        """
-        Split the data into training, validation, and test sets.
+        """Split the data into training, validation, and test sets.
 
         Returns:
-            Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.Series, pd.Series, pd.Series]: The split datasets.
+            Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.Series,
+                pd.Series, pd.Series]: The split datasets.
         """
         # Split the data into train and a temporary set
         X_train, X_temp, y_train, y_temp = train_test_split(
@@ -70,9 +70,8 @@ class TrainValidTestSplitter:
 
     def random_oversample_multi_class(
         self, X: pd.DataFrame, y: pd.Series, ratio: float = 1.0
-    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        """
-        Randomly oversample minority classes in the dataset.
+    ) -> tuple[pd.DataFrame, pd.DataFrame]:
+        """Randomly oversample minority classes in the dataset.
 
         Args:
             X (pd.DataFrame): The feature DataFrame.
@@ -80,7 +79,8 @@ class TrainValidTestSplitter:
             ratio (float, optional): The oversampling ratio. Defaults to 1.0.
 
         Returns:
-            Tuple[pd.DataFrame, pd.DataFrame]: The resampled feature and target DataFrames.
+            Tuple[pd.DataFrame, pd.DataFrame]: The resampled feature and
+                target DataFrames.
         """
         # Set a random seed for reproducibility
         np.random.seed(self.random_state)
@@ -129,12 +129,12 @@ class TrainValidTestSplitter:
 
     def get_dataframes(
         self,
-    ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-        """
-        Get the split datasets for training, validation, and test.
+    ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+        """Get the split datasets for training, validation, and test.
 
         Returns:
-            Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]: The training, validation, and test DataFrames.
+            Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]: The training,
+                validation, and test DataFrames.
         """
         # Split the data into training, validation, and test sets
         X_train, X_valid, X_test, y_train, y_valid, y_test = self.split_data()
@@ -204,7 +204,7 @@ class TrainValidTestSplitter:
             dtype = col_data.dtype
 
             # Convert object columns to category dtype if less than 50% unique values
-            if dtype == object:
+            if dtype is object:
                 _object_optimizer(optimized_df, col, col_data)
 
             # Optimize integer columns

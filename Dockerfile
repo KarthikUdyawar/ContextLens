@@ -1,26 +1,21 @@
-# Use the Python 3.10 slim base image
-FROM python:3.10-slim
+# Use the Python 3.12 slim base image
+FROM python:3.12-slim
 
 # Set the working directory inside the container
 WORKDIR /code
 
-# Copy all files from the current directory to the working directory in the container
+# uv binary, pinned image not tag — avoid silent upstream drift
+COPY --from=ghcr.io/astral-sh/uv:0.5 /uv /uvx /bin/
+
+# Deps layer first — cache hit unless pyproject/lock change
+COPY pyproject.toml uv.lock* ./
+RUN uv sync --frozen --no-dev --no-install-project
+
+# App code layer — changes here don't bust the deps cache
 COPY ./ .
+RUN uv sync --frozen --no-dev
 
-# Define the virtual environment path
-ENV VIRTUAL_ENV=/opt/venv
-
-# Create a virtual environment
-RUN python3 -m venv $VIRTUAL_ENV
-
-# Add the virtual environment's binary path to the system PATH
-ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-
-# Upgrade pip inside the virtual environment
-RUN pip install --upgrade pip
-
-# Install the package from the current directory
-RUN pip install . --no-cache-dir
+ENV PATH="/code/.venv/bin:$PATH"
 
 # Expose port 8000 for the FastAPI application
 EXPOSE 8000

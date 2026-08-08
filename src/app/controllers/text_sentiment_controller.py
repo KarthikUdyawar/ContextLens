@@ -1,8 +1,10 @@
-"""Controller Functions for Text Sentiment Analysis"""
-from src.app.interfaces.text_sentiment_interface import (CleanTextResponse,
-                                                         TextProbResponse,
-                                                         TextRequest,
-                                                         TextResponse)
+"""Controller Functions for Text Sentiment Analysis."""
+from src.app.interfaces.text_sentiment_interface import (
+    CleanTextResponse,
+    TextProbResponse,
+    TextRequest,
+    TextResponse,
+)
 from src.pipeline.predict import TextSentimentClassifier
 
 MODEL_FILE_PATH = "src/model/0.2v/model.pth"
@@ -37,7 +39,7 @@ def predict_sentiment(request: TextRequest) -> TextResponse:
     return TextResponse(cleaned_text=cleaned_text, sentiment=result)
 
 
-def predict_prob_sentiment(request: TextRequest) -> TextResponse:
+def predict_prob_sentiment(request: TextRequest) -> TextProbResponse:
     """Predict the sentiment probabilities of a user's input text.
 
     Args:

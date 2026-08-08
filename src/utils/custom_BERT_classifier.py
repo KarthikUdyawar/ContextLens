@@ -1,27 +1,32 @@
-"""Custom BERT-based Text Classifier"""
+"""Custom BERT-based Text Classifier."""
+
+from __future__ import annotations
+
 import torch
 import torch.nn as nn
 from transformers import BertModel
 
 
-class CustomBERTClassifier(nn.Module):
+class CustomBERTClassifier(nn.Module):  # type: ignore[misc]
     """A custom BERT-based text classifier.
 
     Args:
-        num_classes (int): The number of classes for classification.
-        dropout_prob (float, optional): Probability of dropout. Defaults to 0.2.
+        num_classes: The number of classes for classification.
+        dropout_prob: Probability of dropout. Defaults to 0.2.
     """
 
-    def __init__(self, num_classes: int, dropout_prob: float = 0.2):
+    def __init__(self, num_classes: int, dropout_prob: float = 0.2) -> None:
         """Initialize the custom BERT-based text classifier.
 
         Args:
-            num_classes (int): The number of classes for classification.
-            dropout_prob (float, optional): Probability of dropout. Defaults to 0.2.
+            num_classes: The number of classes for classification.
+            dropout_prob: Probability of dropout. Defaults to 0.2.
         """
-        super(CustomBERTClassifier, self).__init__()
+        super().__init__()
         # Loading pre-implemented BERT model
-        self.bert = BertModel.from_pretrained("bert-base-uncased")
+        # nosec B615: unpinned revision, pre-existing since v1.0.0 — see
+        # DECISIONS.md for revision-pin policy status.
+        self.bert = BertModel.from_pretrained("bert-base-uncased")  # nosec B615
         # Custom additional layers
         self.fc1 = nn.Linear(self.bert.config.hidden_size, 128)
         self.fc2 = nn.Linear(128, 64)  # Add an additional fully connected layer
@@ -36,11 +41,11 @@ class CustomBERTClassifier(nn.Module):
         """Forward pass of the custom BERT-based text classifier.
 
         Args:
-            input_ids (torch.Tensor): The input token IDs.
-            attention_mask (torch.Tensor): The attention mask.
+            input_ids: The input token IDs.
+            attention_mask: The attention mask.
 
         Returns:
-            torch.Tensor: Predicted class probabilities.
+            Predicted class probabilities.
         """
         # BERT model
         bert_outputs = self.bert(input_ids=input_ids, attention_mask=attention_mask)

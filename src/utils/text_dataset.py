@@ -1,6 +1,9 @@
-"""Custom Text Dataset for BERT-based Text Classification"""
+"""Custom Text Dataset for BERT-based Text Classification."""
+
+from __future__ import annotations
 
 from functools import lru_cache
+from typing import Any
 
 import torch
 from torch.utils.data import Dataset
@@ -15,32 +18,33 @@ def get_tokenizer(pretrained_model: str = "bert-base-uncased") -> BertTokenizer:
     per process instead of once per `TextDataset` instantiation (DECISIONS.md #6).
 
     Args:
-        pretrained_model (str, optional): Tokenizer checkpoint name.
+        pretrained_model: Tokenizer checkpoint name.
             Defaults to "bert-base-uncased".
 
     Returns:
-        BertTokenizer: The (cached) tokenizer instance.
+        The (cached) tokenizer instance.
     """
-    return BertTokenizer.from_pretrained(pretrained_model)
+    # nosec B615: unpinned revision, same as custom_BERT_classifier.py
+    return BertTokenizer.from_pretrained(pretrained_model)  # nosec B615
 
 
-class TextDataset(Dataset):
+class TextDataset(Dataset):  # type: ignore[misc]
     """A custom text dataset for BERT-based text classification."""
 
     def __init__(
         self,
-        texts: list,
-        labels: list = None,
+        texts: list[str],
+        labels: list[Any] | None = None,
         max_length: int = 100,
-        tokenizer: BertTokenizer = None,
-    ):        
+        tokenizer: BertTokenizer | None = None,
+    ) -> None:
         """Initialize the custom text dataset.
 
         Args:
-            texts (list):  A list of text samples.
-            labels (list, optional): A list of corresponding labels. Defaults to None.
-            max_length (int, optional): Maximum sequence length. Defaults to 100.
-            tokenizer (BertTokenizer, optional): Pre-loaded tokenizer to reuse.
+            texts: A list of text samples.
+            labels: A list of corresponding labels. Defaults to None.
+            max_length: Maximum sequence length. Defaults to 100.
+            tokenizer: Pre-loaded tokenizer to reuse.
                 Defaults to the cached `get_tokenizer()` instance.
         """
         self.texts = texts
@@ -52,18 +56,19 @@ class TextDataset(Dataset):
         """Get the total number of samples in the dataset.
 
         Returns:
-            int: The number of samples in the dataset.
+            The number of samples in the dataset.
         """
         return len(self.texts)
 
-    def __getitem__(self, idx: int) -> dict:
+    def __getitem__(self, idx: int) -> dict[str, torch.Tensor]:
         """Get a sample from the dataset by index.
 
         Args:
-            idx (int): Index of the sample to retrieve.
+            idx: Index of the sample to retrieve.
 
         Returns:
-            dict: A dictionary containing input_ids, attention_mask, and labels (if available).
+            A dictionary containing input_ids, attention_mask, and
+            labels (if available).
         """
         text = self.texts[idx]
 
