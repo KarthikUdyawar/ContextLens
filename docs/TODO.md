@@ -1,44 +1,29 @@
 # TODO
 
-## Baseline (v1.0.0) — cheap, non-breaking — done (session 2)
+## Sprint X1 (current) — UV migration + raw data to MinIO
 
-- [x] Fix double softmax in `predict.py` (DECISIONS.md #1)
-- [x] Remove redundant preprocessing call in controller (#3)
-- [x] Cache `BertTokenizer` once per classifier instance instead of per-request (#6)
-- [x] Migrate `Field(example=...)` to `json_schema_extra` under Pydantic 2.4.2 (#8)
-- [x] Add CORS middleware (#9, needed before Streamlit UI can call the API)
-- [x] Fix CSV lookup paths to be package-relative, not cwd-relative (#10)
-- [x] Sync version string between `setup.py` and `main.py` (#11)
-- [x] Add `/health` endpoint (#12)
-- [x] Fix `dev-requirements.txt` CUDA-only `torch`/`torchaudio`/`torchvision` pins (#5)
-- [x] `classify_sentiment` fails loud (not silent) on missing checkpoint; API maps it to 503; `basic.py`/`gui.py` catch it (#4)
-- [x] Docker `HEALTHCHECK` wired to `/health` (INFRA.md gap)
-- [ ] Decide + document how `model.pth` reaches a fresh clone/Docker build (#7) — release asset vs registry vs documented manual step. **Still open** — moved to ROADMAP.md's production-grade track, needs a decision next session, not more code.
-- [ ] Fix README FastAPI version badge, stale vs pinned `fastapi==0.103.2` (#15, found session 2)
- 
+### Tooling — UV migration
 
-## Docs (session 1)
+- [ ] **R1** — Write `pyproject.toml`: runtime deps under `[project.dependencies]` (from `requirements.txt`); `dev` dependency group (from `dev-requirements.txt`); `train` dependency group (training-only deps split out of the current flat dev list — torch training extras, TextBlob, etc.)
+- [ ] **R2** — Remove `setup.py`, `requirements.txt`, `dev-requirements.txt` — no pip-compat retained (DECISIONS.md #20)
+- [ ] **R3** — Bump Python floor 3.10 → 3.12: `pyproject.toml`, `Dockerfile` base image, any CI config referencing 3.10
 
-- [x] `ARCHITECTURE.md`, `PIPELINE.md`, `MODELS.md`, `SERVICES.md`, `API_DOC.md`, `STORAGE.md`, `INFRA.md`, `DESIGN.md`, `DECISIONS.md`, `PRD.md`, `PROJECT.tree`, `USER-FLOW.md`, `ROADMAP.md`, `TODO.md`, `handoff.md`
+### Infra — docker-compose.yml
 
-## Docs (session 2)
+- [ ] **R4** — Add `minio` service: image `minio/minio`, API + console ports exposed, default bucket `raw-data` created on startup (DECISIONS.md #22)
+- [ ] **R5** — Add `postgres` service: default image, db name `contextlens` (DECISIONS.md #23), default port 5432 — table schema not built yet (next sprint)
+- [ ] **R6** — Add `vllm` service: image/model **still open**, see `ROADMAP.md` "Not yet decided" — placeholder service until model is picked
 
-- [x] `DECISIONS.md` — statuses updated for #1, #3–#6, #8–#12; new #15 logged
-- [x] `TODO.md` — this file
-- [x] `ROADMAP.md` — new production-grade track added to "Not yet decided"
-- [x] `handoff.md` — refreshed for next session
+### Credentials
 
-## v2.0.0 (capability track) — pending brainstorm before PRD
+- [ ] **R7** — Kaggle API credentials: env vars `KAGGLE_USERNAME` / `KAGGLE_KEY`, documented in `.env.example`, never committed
 
-- [ ] Pick model: DeBERTa vs RoBERTa vs ModernBERT — shortlist + decision
-- [ ] Pick HF dataset — shortlist + decision
-- [ ] UV migration plan (pyproject.toml, lockfile, drop requirements.txt/setup.py or keep for compat)
-- [ ] pre-commit config (which hooks — black/ruff/mypy?)
-- [ ] `.coderabbit.yaml` — review rules/scope
-- [ ] Streamlit UI — scope (predict only, or also `/clean`, `/predict-prob` visualization like the existing Tkinter radar chart?)
-- [ ] Notebook experiments on new model+data before committing to training pipeline changes
-- [ ] Write 2.0 `PRD.md`
+### Download scripts
 
-## Production-grade track — pending brainstorm, separate from v2.0.0 capability work
+- [ ] **R8** — HF download script: `sentiment140`, `cardiffnlp/tweet_eval` (sentiment config), `bdstar/twitter-sentiment-analysis`, `bdstar/Tweets-Sentiment-Analysis` → MinIO `raw-data/hf/<dataset>/`, raw, unmodified, labels ignored
+- [ ] **R9** — Kaggle download script: `cosmos98/twitter-and-reddit-sentimental-analysis-dataset`, `tariqsays/sentiment-dataset-with-1-million-tweets` → MinIO `raw-data/kaggle/<dataset>/`, raw, unmodified, labels ignored
 
-See ROADMAP.md's "Not yet decided" section for the full list (observability, security, testing/CI/CD, service architecture, model/data governance, infra). Not scoped into tasks yet — next session.
+
+**Stops here.** Next sprint (Postgres ingestion + vLLM/DSPy labelling) not started — not tracked until X1 closes.
+
+See `ROADMAP.md` for full sequencing/history, `DECISIONS.md` for this sprint's decisions, `PRD.md` for X1 scope detail.

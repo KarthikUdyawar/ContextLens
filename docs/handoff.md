@@ -2,36 +2,47 @@
 
 ## Where things stand
 
-v1.0.0 baseline fully documented (session 1). v1.0.1 patch pass done (session 2): 10 of 14 baseline findings fixed (`DECISIONS.md` #1, #3–#6, #8–#12), plus Docker `HEALTHCHECK` wiring and CLI/GUI error handling for the #4 fix. Full per-item detail is in `DECISIONS.md`; don't re-derive it here.
+v1.0.0 baseline + v1.0.1 patch pass are done (see prior handoff / `DECISIONS.md` for that history — not restated here). This session planned and doc'd **Sprint X1**, the first sprint of the 2.0.0 data track. No code written yet — this session was planning + docs only.
 
-Still open, carried forward: #2, #7, #13 (all deliberate — need retrain/decision, not more patching), #15 (new, cosmetic — stale README badge).
+**Do not re-derive any of this — read the docs, they're current:**
+- `ROADMAP.md` — full history, v2.0.0 direction, data acquisition & labelling pipeline (5 sequenced stages), Sprint X1 summary, updated Sequencing list.
+- `PRD.md` — v1.0.0 retrospective PRD (unchanged) + new full PRD section for Sprint X1 (Problem/Users/Scope/Sources/What it does & doesn't do/Success criteria).
+- `DECISIONS.md` — original 15 v1.0.0 findings (unchanged) + new "Sprint X1 / 2.0.0 data-track decisions" table, #16–23.
+- `TODO.md` — rewritten to contain **only** Sprint X1's task list, task IDs **R1–R9**. All older checklists (baseline, docs, old v2.0.0/production-grade lists) were deliberately removed from this file per user request — that content still exists in `ROADMAP.md`/`DECISIONS.md`, just not as a task list anymore.
 
-2.0.0 is scoped but **not yet planned in detail** — direction confirmed (see `ROADMAP.md`), full `PRD.md` for 2.0 not written. Do not generate it without resolving `ROADMAP.md`'s "Not yet decided" list first.
+## Key decisions this session (also in DECISIONS.md #16–23, don't re-litigate)
 
-A second, separate track was added this session: **production-grade readiness** (observability, security, testing/CI/CD, service architecture, model/data governance, infra). It's independent of which model/dataset ends up in 2.0 — see `ROADMAP.md`'s new "Production-grade track" section for the full list. Not yet scoped into tasks, not yet sequenced against 2.0's capability work. Both tracks need a planning session.
+- **Labelling:** self-hosted **vLLM + DSPy** replaces TextBlob — not adopting a pre-labeled public HF dataset. Reason: surveyed HF 3-class sentiment sets are either heuristic-labeled (same problem as TextBlob) or already model-labeled by someone else's model — neither is an improvement. Self-hosted labelling is owned/inspectable.
+- **3-class scheme** (negative/neutral/positive) carries over unchanged into 2.0.0 — not revisited.
+- **Storage:** MinIO (raw landing, bucket `raw-data`) → Postgres (extracted text + labels, db `contextlens`) — Postgres chosen over parquet-only specifically so multi-source text stays queryable for analysis later.
+- **Sources confirmed** (short-form Twitter/Reddit only, no long-form text): HF `sentiment140`, `cardiffnlp/tweet_eval` (sentiment config), `bdstar/twitter-sentiment-analysis`, `bdstar/Tweets-Sentiment-Analysis`; Kaggle `cosmos98/twitter-and-reddit-sentimental-analysis-dataset`, `tariqsays/sentiment-dataset-with-1-million-tweets`. Source-provided labels are downloaded as part of each file but never read/used anywhere.
+- **Tooling:** full UV migration — `pyproject.toml` replaces `setup.py`/`requirements.txt`/`dev-requirements.txt` entirely, no pip-compat kept. Dependency groups named `dev` and `train` (simple, matches old runtime/dev split); runtime deps live in base `[project.dependencies]`. Python floor bumped 3.10 → 3.12.
+- **Target scale:** ~1M rows for now (long-term goal 5M, not required this phase).
 
-## Confirmed 2.0.0 capability direction (don't re-ask)
+## Sprint X1 scope — where the next session should start coding
 
-- Model: fine-tune newer transformer, shortlist = DeBERTa / RoBERTa / ModernBERT
-- Data: public HF Hub dataset (not re-scraped)
-- Compute: GPU available
-- Tooling: UV, pre-commit, `.coderabbit.yaml`, Streamlit UI
-- This is a breaking change → v2.0.0
+Task IDs **R1–R9** are the actual checklist, live in `TODO.md`. Summary:
+- R1–R3: UV migration (`pyproject.toml` w/ `dev`+`train` groups, drop old dep files, bump to Python 3.12)
+- R4–R6: `docker-compose.yml` — add `minio` (bucket `raw-data`), `postgres` (db `contextlens`), `vllm` (**image/model still open** — not decided yet)
+- R7: Kaggle API credentials, env-based (`KAGGLE_USERNAME`/`KAGGLE_KEY`), via `.env.example`
+- R8–R9: download scripts (HF sources, Kaggle sources) → land raw files in MinIO under `raw-data/hf/...` and `raw-data/kaggle/...`, unmodified, unlabeled
 
-## Next session should
+**X1 stops once raw files are sitting in MinIO.** Text extraction into Postgres (`label = NULL`) is explicitly a *later* sprint, not part of X1 — don't scope-creep into it.
 
-1. Decide how the two open tracks (2.0 capability, production-grade) relate — sequential, parallel, or production-grade gates 2.0's release. This wasn't decided this session, don't assume either way.
-2. Resolve `ROADMAP.md`'s 2.0 "Not yet decided" list (specific model, specific dataset, GUI fate) if capability planning goes first.
-3. Scope the production-grade track's "Not yet decided" list into actual tasks if that goes first — it's currently a list of areas, not tickets.
-4. Only after whichever track is planned, draft the corresponding PRD (`PRD-2.0.md` and/or a production-readiness doc — naming/existence TBD, don't create either speculatively).
-5. Reference `DECISIONS.md`/`TODO.md`/`ROADMAP.md` for backlog and status — don't re-derive them.
+## Known open question blocking R6
 
-## Contract changes from this session worth knowing before touching related code
+vLLM's model/image was never picked this session — flagged in both `TODO.md` (R6) and `ROADMAP.md`'s "Not yet decided" list. Needs a decision before R6 can actually be implemented (R1–R5, R7–R9 have no such blocker).
 
-- `TextSentimentClassifier.classify_sentiment(cleaned_text, ...)` now expects **already-preprocessed** text (param renamed from `input_text`). Callers must call `preprocess_text` first.
-- It now **raises `RuntimeError`** if the checkpoint didn't load, instead of silently predicting on random weights. Every caller needs to handle that (API does via a global exception handler in `main.py`; `basic.py`/`gui.py` do via try/except).
-- `return_probabilities=True` now returns a plain `list`, not a numpy array.
- 
+## Note on R1 (flagged, not yet resolved)
+
+Splitting a `train` dependency group out of the current flat `dev-requirements.txt` is new work, not a mechanical lift — there's no existing train/dev split to copy from. Whoever picks up R1 should expect to actually sort which dev-requirements entries are training-only vs general-dev.
+
 ## Skills relevant to next session
 
-`tdd` (for any new pipeline/API code, and for finally landing the deferred pytest suite/CI), `clean-code`, `ponytail`, plus whatever the user invokes for the model experimentation notebooks.
+`tdd` (once R1–R9 code starts — download scripts, compose services should get tests), `clean-code`, `ponytail` (esp. for the docker-compose additions — keep default configs, avoid over-engineering three brand-new services), `caveman ultra` (communication style, active this session, persists unless user says otherwise).
+
+## Conventions carried over (unchanged, don't re-ask)
+
+- Code changes in `git diff` format, files shared in blockquote (`>`) format.
+- Karthik shares code file-by-file on request, confirms each diff batch, prompts explicit completeness checks before moving on.
+- Bugs found mid-task get fixed same session, not deferred.

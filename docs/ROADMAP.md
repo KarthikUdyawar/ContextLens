@@ -21,16 +21,34 @@ Answers the "land before 2.0 or bundle into 2.0" question below: landed now, as 
 
 Direction confirmed:
 - **Model:** fine-tune a newer transformer (DeBERTa / RoBERTa / ModernBERT — candidate shortlist, final pick TBD in PRD).
-- **Data:** switch from TextBlob-labeled scraped data to a public, human-labeled HF Hub sentiment dataset (dataset TBD).
+- **Data:** raw text pulled from HF + Kaggle sources (see below), source labels discarded — dataset relabeled from scratch via self-hosted vLLM + DSPy.
+- **Classes:** v1.0.0's 3-class scheme (negative/neutral/positive) carries over unchanged.
 - **Compute:** GPU available for training.
-- **Tooling:** UV for dependency management (replaces pip/venv workflow), pre-commit hooks, `.coderabbit.yaml` for automated PR review, expanded test coverage, GitHub Actions CI (`tests.yml`, drafted session 1, deferred here).
-- **UI:** Streamlit frontend (new consumer alongside the existing API/CLI/GUI).
+- **Tooling:** UV for dependency management (Python bumped 3.10 → 3.12), pre-commit hooks, `.coderabbit.yaml` for automated PR review, expanded test coverage, GitHub Actions CI (`tests.yml`, drafted session 1, deferred here).
+- **UI:** Streamlit frontend (new consumer alongside the existing API/CLI/GUI). Tkinter GUI rework/retirement decision deferred.
 - **Pipeline:** re-evaluate `build_datasets.py`/`build_model.py` as proper CLI-invokable modules instead of top-to-bottom scripts.
 
+See `DECISIONS.md` for this sprint's decisions and their rationale (data labelling strategy, storage architecture, tooling migration, etc.) — not restated here.
+
+### Data acquisition & labelling pipeline (sequenced)
+
+New infra, new stages, replacing the old `artifacts/Text_dataset.br` → `build_datasets.py` flow:
+
+1. Download raw text from HF + Kaggle sources (list below) → land as-is in **MinIO** (bucket `raw-data`).
+2. Read each landed file, extract text only, insert into **Postgres** (db `contextlens`) with `label = NULL`.
+3. Repeat 1–2 across sources until the table reaches the current milestone target of **~1M rows** (long-term goal 5M, not required now).
+4. Batch-label the ~1M rows via self-hosted **vLLM** (Docker) driven by **DSPy** programs, updating `label` in place.
+5. Split into train/valid/test from the now-labeled Postgres table (replaces `TrainValidTestSplitter` reading parquet directly).
+
+Sources confirmed for the 1M pass (all short-form Twitter/Reddit text, matching v1.0.0's domain):
+- HF: `sentiment140`, `cardiffnlp/tweet_eval` (sentiment config), `bdstar/twitter-sentiment-analysis`, `bdstar/Tweets-Sentiment-Analysis`
+- Kaggle: `cosmos98/twitter-and-reddit-sentimental-analysis-dataset`, `tariqsays/sentiment-dataset-with-1-million-tweets`
+
 Not yet decided (blocking full PRD.md for 2.0):
-- Which of DeBERTa/RoBERTa/ModernBERT specifically, and why.
-- Which HF dataset(s) — needs a short evaluation against class balance, size, license.
-- Whether v1.0.0's 3-class scheme carries over unchanged.
+- Dedup/near-duplicate handling across merged HF+Kaggle sources (known overlap risk, e.g. Sentiment140 is repackaged in multiple listed sources) — before or after vLLM labelling.
+- vLLM/DSPy labelling program design (direct classify vs CoT-style), throughput/cost budget for scaling 1M → 5M.
+- Independent eval set strategy — current plan has no eval holdout independent of the vLLM labeler itself.
+- Postgres schema for the labeled text table.
 - Whether the Tkinter GUI is retired in favor of Streamlit or kept alongside.
 
 ## Production-grade track — planned (not yet scoped), separate from v2.0.0 capability work
@@ -46,11 +64,18 @@ Not yet decided:
 - **Infra:** multi-stage `Dockerfile` (dev deps currently ship in the runtime image), `docker-compose.yml` restart policy + env file + volumes, and a documented deploy target (k8s / ECS / Cloud Run — currently undefined beyond `docker compose up`).
 
 Rough priority if/when this gets scoped: logging → land the deferred tests/CI → auth/rate-limit/size-cap → env config + `Depends()` → CD → then fold in with the 2.0 capability work.
- 
+
+## Sprint X1 (current)
+
+UV migration + MinIO/Postgres/vLLM compose services + Kaggle creds + raw HF/Kaggle data landed in MinIO. Stops once raw files sit in MinIO — Postgres ingestion is a later sprint. Task checklist (task IDs R1–R9) lives in `TODO.md`; detailed scope in `PRD.md`'s X1 section; decisions in `DECISIONS.md`.
+
 ## Sequencing
 
 1. ~~v1.0.0 baseline docs~~ (session 1)
 2. ~~v1.0.1 patch pass~~ (session 2)
-3. 2.0.0 brainstorm → `docs/PRD.md` gets superseded by a versioned 2.0 PRD (or a new `docs/PRD-2.0.md` — naming TBD) — **and** production-grade track brainstorm, sequencing between the two TBD
-4. Notebook experiments on candidate model + dataset
-5. Implementation (UV migration, pre-commit, coderabbit config, pipeline refactor, Streamlit UI, retrain, production-grade work)
+3. Sprint X1 (current) — UV migration + MinIO/Postgres/vLLM compose services + Kaggle creds + raw data landed in MinIO
+4. Next sprint — extract text → Postgres (`label = NULL`), grow to ~1M rows
+5. vLLM/DSPy batch labelling pass over the ~1M rows
+6. 2.0.0 brainstorm → `docs/PRD.md` gets superseded by a versioned 2.0 PRD (or a new `docs/PRD-2.0.md` — naming TBD) — **and** production-grade track brainstorm, sequencing between the two TBD
+7. Notebook experiments on candidate model + labeled dataset
+8. Implementation (pre-commit, coderabbit config, pipeline refactor, Streamlit UI, retrain, production-grade work)
