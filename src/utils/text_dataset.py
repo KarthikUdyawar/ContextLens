@@ -3,11 +3,17 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import Any
+from typing import Any, cast
 
 import torch
 from torch.utils.data import Dataset
 from transformers import BertTokenizer
+
+# Pinned to a specific commit, not `main` — main.py/custom_BERT_classifier.py's
+# model load must use the same revision (train/serve skew otherwise).
+# Verify before relying on it: git ls-remote
+# https://huggingface.co/bert-base-uncased refs/heads/main
+BERT_MODEL_REVISION = "86b5e09"
 
 
 @lru_cache(maxsize=1)
@@ -24,8 +30,7 @@ def get_tokenizer(pretrained_model: str = "bert-base-uncased") -> BertTokenizer:
     Returns:
         The (cached) tokenizer instance.
     """
-    # nosec B615: unpinned revision, same as custom_BERT_classifier.py
-    return BertTokenizer.from_pretrained(pretrained_model)  # nosec B615
+    return BertTokenizer.from_pretrained(pretrained_model, revision=BERT_MODEL_REVISION)
 
 
 class TextDataset(Dataset):  # type: ignore[misc]
@@ -49,7 +54,12 @@ class TextDataset(Dataset):  # type: ignore[misc]
         """
         self.texts = texts
         self.labels = labels
-        self.tokenizer = tokenizer if tokenizer is not None else get_tokenizer()
+        # Explicit annotation needed: without it Pylance can't pin a concrete
+        # type here, falls back to testing `encode_plus`'s full overload set
+        # in __getitem__, and reports confusing per-parameter-type errors.
+        self.tokenizer: BertTokenizer = (
+            tokenizer if tokenizer is not None else get_tokenizer()
+        )
         self.max_length = max_length
 
     def __len__(self) -> int:
@@ -72,7 +82,12 @@ class TextDataset(Dataset):  # type: ignore[misc]
         """
         text = self.texts[idx]
 
-        encoding = self.tokenizer.encode_plus(
+        # `encode_plus`'s @overload set keys off `return_tensors` as a literal;
+        # passing it through a variable (not an inline "pt" literal) breaks
+        # Pylance's overload match, so it falls through to a wrong candidate.
+        # We know the concrete return shape (return_tensors="pt" -> a
+        # BatchEncoding of tensors) so tell it directly instead of fighting overloads.
+        encoding = cast(Any, self.tokenizer.encode_plus)(
             text,
             add_special_tokens=True,
             max_length=self.max_length,

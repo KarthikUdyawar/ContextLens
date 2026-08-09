@@ -6,6 +6,8 @@ import torch
 import torch.nn as nn
 from transformers import BertModel
 
+from src.utils.text_dataset import BERT_MODEL_REVISION
+
 
 class CustomBERTClassifier(nn.Module):  # type: ignore[misc]
     """A custom BERT-based text classifier.
@@ -24,9 +26,9 @@ class CustomBERTClassifier(nn.Module):  # type: ignore[misc]
         """
         super().__init__()
         # Loading pre-implemented BERT model
-        # nosec B615: unpinned revision, pre-existing since v1.0.0 — see
-        # DECISIONS.md for revision-pin policy status.
-        self.bert = BertModel.from_pretrained("bert-base-uncased")  # nosec B615
+        self.bert = BertModel.from_pretrained(
+            "bert-base-uncased", revision=BERT_MODEL_REVISION
+        )
         # Custom additional layers
         self.fc1 = nn.Linear(self.bert.config.hidden_size, 128)
         self.fc2 = nn.Linear(128, 64)  # Add an additional fully connected layer

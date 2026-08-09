@@ -26,8 +26,8 @@ class TextSentimentClassifier:
         preprocess_text(input_text: str) -> str:
             Preprocess the input text for sentiment analysis.
 
-        classify_sentiment(input_text: str,
-            return_probabilities: bool = False) -> str or list:
+        classify_sentiment(cleaned_text: str,
+            return_probabilities: bool = False) -> str | list[float]:
             Predict the sentiment of the input text and return the result.
 
     """
@@ -48,11 +48,11 @@ class TextSentimentClassifier:
         self.model_loaded = False
         if os.path.exists(model_checkpoint_file):
             try:
-                # nosec B614: weights_only=True deferred — needs verification
-                # against existing checkpoint format first. See DECISIONS.md.
-                checkpoint = torch.load(  # nosec B614
-                    model_checkpoint_file, map_location=self.device
-                )
+                checkpoint = torch.load(
+                    model_checkpoint_file,
+                    map_location=self.device,
+                    weights_only=True,
+                 )
                 self.model.load_state_dict(checkpoint["model_state_dict"])
                 self.model_loaded = True
                 print("Model loaded")
@@ -113,7 +113,7 @@ class TextSentimentClassifier:
         # `outputs` is already softmax-normalized inside CustomBERTClassifier.forward();
         # do NOT softmax again here (DECISIONS.md #1).
         y_pred_prob = outputs.cpu().numpy()[0]
-        y_pred = torch.argmax(outputs, axis=1).cpu().numpy()[0]
+        y_pred = torch.argmax(outputs, dim=1).cpu().numpy()[0]
 
         _result = (
             "positive" if y_pred == 2 else "negative" if y_pred == 0 else "neutral"

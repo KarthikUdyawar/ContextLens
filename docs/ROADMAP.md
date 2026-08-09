@@ -21,7 +21,7 @@ Answers the "land before 2.0 or bundle into 2.0" question below: landed now, as 
 
 Direction confirmed:
 - **Model:** fine-tune a newer transformer (DeBERTa / RoBERTa / ModernBERT — candidate shortlist, final pick TBD in PRD).
-- **Data:** raw text pulled from HF + Kaggle sources (see below), source labels discarded — dataset relabeled from scratch via self-hosted vLLM + DSPy.
+- **Data:** raw text pulled from HF + Kaggle sources (see below); source labels are retained in the downloaded raw files but are ignored by the ingestion and labelling pipeline — dataset relabeled from scratch via self-hosted vLLM + DSPy.
 - **Classes:** v1.0.0's 3-class scheme (negative/neutral/positive) carries over unchanged.
 - **Compute:** GPU available for training.
 - **Tooling:** UV for dependency management (Python bumped 3.10 → 3.12), pre-commit hooks, `.coderabbit.yaml` for automated PR review, expanded test coverage, GitHub Actions CI (`tests.yml`, drafted session 1, deferred here).
@@ -34,14 +34,14 @@ See `DECISIONS.md` for this sprint's decisions and their rationale (data labelli
 
 New infra, new stages, replacing the old `artifacts/Text_dataset.br` → `build_datasets.py` flow:
 
-1. Download raw text from HF + Kaggle sources (list below) → land as-is in **MinIO** (bucket `raw-data`).
++1. Download raw text from HF + Kaggle sources (list below) → land in **MinIO** (bucket `raw-data`). HF sources are exported as a canonical `data.parquet` per dataset; Kaggle sources land as-is.
 2. Read each landed file, extract text only, insert into **Postgres** (db `contextlens`) with `label = NULL`.
 3. Repeat 1–2 across sources until the table reaches the current milestone target of **~1M rows** (long-term goal 5M, not required now).
 4. Batch-label the ~1M rows via self-hosted **vLLM** (Docker) driven by **DSPy** programs, updating `label` in place.
 5. Split into train/valid/test from the now-labeled Postgres table (replaces `TrainValidTestSplitter` reading parquet directly).
 
 Sources confirmed for the 1M pass (all short-form Twitter/Reddit text, matching v1.0.0's domain):
-- HF: `sentiment140`, `cardiffnlp/tweet_eval` (sentiment config), `bdstar/twitter-sentiment-analysis`, `bdstar/Tweets-Sentiment-Analysis`
+- HF: `stanfordnlp/sentiment140`, `cardiffnlp/tweet_eval` (sentiment config), `bdstar/twitter-sentiment-analysis`, `bdstar/Tweets-Sentiment-Analysis`
 - Kaggle: `cosmos98/twitter-and-reddit-sentimental-analysis-dataset`, `tariqsays/sentiment-dataset-with-1-million-tweets`
 
 Not yet decided (blocking full PRD.md for 2.0):
@@ -74,6 +74,7 @@ UV migration + MinIO/Postgres/vLLM compose services + Kaggle creds + raw HF/Kagg
 1. ~~v1.0.0 baseline docs~~ (session 1)
 2. ~~v1.0.1 patch pass~~ (session 2)
 3. ~~Sprint X1~~ (sessions 3–6) — UV migration + MinIO/Postgres/vLLM compose services + Kaggle creds + raw data landed in MinIO (live-verified session 6)
+3.5. ~~CodeRabbit review follow-up~~ (session 7) — checkpoint-load hardening, HF revision pinning, MinIO provenance metadata, one new correctness fix (`torch.argmax` axis→dim), doc-drift cleanup. See `TODO.md`'s "CodeRabbit follow-up" checklist and `DECISIONS.md` #24/#25/#32.
 4. Next sprint — extract text → Postgres (`label = NULL`), grow to ~1M rows
 5. vLLM/DSPy batch labelling pass over the ~1M rows
 6. 2.0.0 brainstorm → `docs/PRD.md` gets superseded by a versioned 2.0 PRD (or a new `docs/PRD-2.0.md` — naming TBD) — **and** production-grade track brainstorm, sequencing between the two TBD

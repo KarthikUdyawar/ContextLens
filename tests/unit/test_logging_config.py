@@ -6,10 +6,16 @@ from src.utils.logging_config import configure_logging
 
 def test_configure_logging_does_not_duplicate_handlers_on_repeat_calls():
     root = logging.getLogger()
-    root.handlers.clear()
+    original_handlers = root.handlers[:]
+    original_level = root.level
 
-    configure_logging()
-    configure_logging()
-    configure_logging()
+    try:
+        root.handlers.clear()
+        configure_logging()
+        configure_logging()
+        configure_logging()
 
-    assert len(root.handlers) == 1
+        assert len(root.handlers) == 1
+    finally:
+        root.handlers[:] = original_handlers
+        root.setLevel(original_level)

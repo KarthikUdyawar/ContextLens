@@ -14,9 +14,10 @@ interfaces/         — text_sentiment_interface.py: pydantic request/response m
 ## Startup behavior
 
 `controllers/text_sentiment_controller.py` instantiates `TextSentimentClassifier` **at module import time** (global). This means:
-- the full BERT model loads before the app can serve any request, including `/health` (which doesn't exist)
-- a missing checkpoint doesn't crash startup — it logs `"Model not loaded."` and continues, so the process reports healthy while serving broken predictions
-- there is no way to override the classifier for testing without loading real weights (no `Depends()`)
+- the full BERT model loads before the app can serve any request, including `/health`
+- a missing checkpoint doesn't crash startup, but no longer reports healthy either — `classify_sentiment`
+  raises `RuntimeError`, `/health` reports real `model_loaded` state and returns 503 when false
+  (DECISIONS.md #4, #12, fixed v1.0.1)
 
 ## Consumers
 

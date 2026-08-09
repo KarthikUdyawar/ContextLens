@@ -26,6 +26,7 @@ uv sync --frozen --group ingest     # + minio/kaggle/datasets (needed for src/in
 Groups are additive, not exclusive — combine as needed (`--group dev --group ingest`, etc). No CUDA-index gap anymore (old `dev-requirements.txt` `torch==2.1.0+cu121` pin dropped v1.0.1, DECISIONS.md #5); `pyproject.toml`'s `torch` pin is untagged.
 
 **VSCode/Pylance note:** `uv sync` must include the relevant group for Pylance to resolve imports (`uv run` resolves ad hoc per-invocation but doesn't update the on-disk `.venv` Pylance reads). Select `.venv/bin/python` as the interpreter after syncing.
+Seen concretely with `sklearn` (`reportMissingModuleSource` on `sklearn.model_selection` in `split_data.py`) when `.venv` wasn't synced with `--group train` — same root cause as the `datasets`/`ingest` case above, not a code bug. Fix: `uv sync --group dev --group train`, then reselect the interpreter.
 
 ## Deployment
 

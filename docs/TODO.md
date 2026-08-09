@@ -17,7 +17,7 @@
   — Done (session 4). Bucket creation via a separate `minio-init` sidecar (mc client), not a startup flag on `minio` itself.
 - [x] **R5** — Add `postgres` service: default image, db name `contextlens` (DECISIONS.md #23), default port 5432 — table schema not built yet (next sprint)
   — Done (session 4). Schema still not built, as scoped.
-- [x] **R6** — Add `vllm` service: image/model **still open**, see `ROADMAP.md` "Not yet decided"  — placeholder service until model is picked
+- [x] **R6** — Add `vllm` service: `Qwen/Qwen2.5-1.5B-Instruct` on image `vllm/vllm-openai:v0.6.3.post1`
   — Done (session 5), verified running end-to-end (`curl /v1/models` returns clean). Final model: `Qwen/Qwen2.5-1.5B-Instruct` (DECISIONS.md #28, superseded from initial Llama pick — gated/unapproved). `docker-compose.yml` `vllm` service: pinned image `v0.6.3.post1` (not `:latest` — CUDA version mismatch), `dns:` override for HF resolution, `--gpu-memory-utilization 0.9 --max-num-seqs 4` (tuned after an OOM at 0.7/default). `.env.example` now includes `HUGGING_FACE_HUB_TOKEN`.
 
 
@@ -28,8 +28,7 @@
 
 ### Download scripts
 
-- [x] **R8** — HF download script: `sentiment140`, `cardiffnlp/tweet_eval` (sentiment config), `bdstar/twitter-sentiment-analysis`, `bdstar/Tweets-Sentiment-Analysis` → MinIO `raw-data/hf/<dataset>/`, raw, unmodified, labels ignored
- — Logic done (session 4), `src/ingest/download_hf.py` (`HfDownloader`), TDD'd incl. partial-failure handling. Entrypoint added R10 (session 5). **Smoke-tested live end-to-end session 6** — all 4 sources landed in MinIO, confirmed via `mc ls`. One fix needed: `sentiment140` → `stanfordnlp/sentiment140` (old slug's repo only ships a deprecated loader script, `datasets>=3.0` dropped script support), plus `revision="refs/convert/parquet"` added to `load_dataset()` call so all 4 sources resolve via HF's parquet-native branch instead of `main`. See DECISIONS.md #30.
+- [x] **R8** — HF download script: `stanfordnlp/sentiment140`, `cardiffnlp/tweet_eval` (sentiment config), `bdstar/twitter-sentiment-analysis`, `bdstar/Tweets-Sentiment-Analysis` → MinIO `raw-data/hf/<dataset>/data.parquet`, exported as canonical parquet, labels ignored — Logic done (session 4), `src/ingest/download_hf.py` (`HfDownloader`), TDD'd incl. partial-failure handling. Entrypoint added R10 (session 5). **Smoke-tested live end-to-end session 6** — all 4 sources landed in MinIO, confirmed via `mc ls`. One fix needed: `sentiment140` → `stanfordnlp/sentiment140` (old slug's repo only ships a deprecated loader script, `datasets>=3.0` dropped script support), plus `revision="refs/convert/parquet"` added to `load_dataset()` call so all 4 sources resolve via HF's parquet-native branch instead of `main`. See DECISIONS.md #30.
 - [x] **R9** — Kaggle download script: `cosmos98/twitter-and-reddit-sentimental-analysis-dataset`, `tariqsays/sentiment-dataset-with-1-million-tweets` → MinIO `raw-data/kaggle/<dataset>/`, raw, unmodified, labels ignored
   — Logic done (session 4), `src/ingest/download_kaggle.py` (`KaggleDownloader`), same shape/tests. Entrypoint added R10 (session 5). **Smoke-tested live end-to-end session 6** — both sources landed in MinIO, confirmed via `mc ls`. No code changes needed, ran clean first try.
 
@@ -43,6 +42,19 @@
 - [x] **R12** — Run `uv lock`, commit `uv.lock` — `Dockerfile`'s `uv sync --frozen` needs it and it's currently missing from the repo
   — Done (session 5). 205 packages resolved, `uv.lock` committed.
 
-**X1 closed (session 5)** — R6 + R10–R12 all done. Next sprint (Postgres ingestion + vLLM/DSPy labelling) not started, not tracked here — see `ROADMAP.md` sequencing.
+**X1 implementation closed (session 5); live acquisition verified (session 6)** — R6 + R10–R12 all done. Next sprint (Postgres ingestion + vLLM/DSPy labelling) not started, not tracked here — see `ROADMAP.md` sequencing.
+**Status: implementation closed session 5 (R6, R10–R12 done); R8/R9 live acquisition verified separately, session 6.** Next sprint (Postgres ingestion + vLLM/DSPy labelling) not started, not tracked here — see `ROADMAP.md` sequencing.
+
+### CodeRabbit follow-up (session 7) — not new R-numbered tasks, closing open review findings
+
+- [x] `predict.py` `torch.load()` → `weights_only=True` (closes DECISIONS.md #24)
+- [x] `custom_BERT_classifier.py`/`text_dataset.py` HF revision pinned via shared `BERT_MODEL_REVISION` (closes DECISIONS.md #25) — **needs verification** against `git ls-remote` before trusting the pinned sha
+- [x] `download_hf.py`/`download_kaggle.py`/`minio_client.py` — per-object provenance metadata (revision/checksum, kaggle version/checksum) on MinIO uploads
+- [x] `predict.py::classify_sentiment` `torch.argmax(..., axis=1)` → `dim=1` (new finding, DECISIONS.md #32) — **needs a smoke test**, pre-fix runtime behavior wasn't confirmed
+- [x] Doc drift cleanup: `PRD.md`/`ROADMAP.md`/`SERVICES.md`/`STORAGE.md`/`PROJECT.tree`/`handoff.md` — stale `sentiment140` slug, stale vLLM "still open" language, stale `/health`/no-database claims, stale artifact tree entry, credential-rotation wording
+- [ ] Dockerfile `uv` image digest pin — blocked on you pasting the real `sha256` from `docker buildx imagetools inspect`
+- [ ] `DECISIONS.md` #23 missing third rationale cell — deferred, said "later" this session
+
+See `DECISIONS.md` #24, #25, #32 for full detail; `STORAGE.md`/`ARCHITECTURE.md` for the metadata/MinioClient doc updates.
 
 See `ROADMAP.md` for full sequencing/history, `DECISIONS.md` for this sprint's decisions, `PRD.md` for X1 scope detail.

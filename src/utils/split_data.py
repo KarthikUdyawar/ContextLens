@@ -204,7 +204,7 @@ class TrainValidTestSplitter:
             dtype = col_data.dtype
 
             # Convert object columns to category dtype if less than 50% unique values
-            if dtype is object:
+            if pd.api.types.is_object_dtype(dtype):
                 _object_optimizer(optimized_df, col, col_data)
 
             # Optimize integer columns

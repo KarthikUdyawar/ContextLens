@@ -4,8 +4,10 @@ FROM python:3.12-slim
 # Set the working directory inside the container
 WORKDIR /code
 
-# uv binary, pinned image not tag — avoid silent upstream drift
-COPY --from=ghcr.io/astral-sh/uv:0.5 /uv /uvx /bin/
+# uv binary, pinned to content-addressable digest — tag can move, digest can't.
+# Get current digest: docker buildx imagetools inspect ghcr.io/astral-sh/uv:0.5
+#   --format '{{json .Manifest}}' | jq -r .digest
+COPY --from=ghcr.io/astral-sh/uv:0.12.3-python3.12-trixie-slim@sha256:sha256:13a15bf8da80cc7cad97711a8a2e094756a9e79feb247d0b496a8cc647fd7d3b /uv /uvx /bin/
 
 # Deps layer first — cache hit unless pyproject/lock change
 COPY pyproject.toml uv.lock* ./

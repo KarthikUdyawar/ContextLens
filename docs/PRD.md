@@ -53,15 +53,18 @@ Internal only — this sprint has no end-user-facing surface. Consumers of X1's 
 X1 covers acquisition and tooling migration only. No labelling, no Postgres ingestion, no training changes, no model work.
 
 - **Tooling:** migrate to UV — `pyproject.toml` (runtime deps in `[project.dependencies]`, `dev` and `train` dependency groups) replaces `setup.py` + `requirements.txt` + `dev-requirements.txt`. Python floor bumped 3.10 → 3.12.
-- **Infra:** add MinIO (bucket `raw-data`), Postgres (db `contextlens`), and vLLM as new services in `docker-compose.yml`, alongside the existing `api` service. Postgres and vLLM are stood up but not yet used — their consumers are the next sprint. vLLM's model/image is still open (see `ROADMAP.md`).
+- **Infra:** add MinIO (bucket `raw-data`), Postgres (db `contextlens`), and vLLM as new services in `docker-compose.yml`, alongside the existing `api` service. Postgres and vLLM are stood up but not yet used — their consumers are the next sprint. vLLM runs `Qwen/Qwen2.5-1.5B-Instruct` on image `vllm/vllm-openai:v0.6.3.post1` (see `DECISIONS.md` #28).
 - **Credentials:** Kaggle API auth wired via env vars (`KAGGLE_USERNAME` / `KAGGLE_KEY`) for automated, non-interactive downloads.
-- **Download script:** pulls raw text from the confirmed HF + Kaggle sources below and lands it in MinIO's `raw-data` bucket, source-prefixed (`raw-data/hf/...`, `raw-data/kaggle/...`), unmodified, unlabeled.
+- **Download script:** pulls raw text from the confirmed HF + Kaggle sources below and lands it in MinIO's
+  `raw-data` bucket, source-prefixed. HF sources are exported as a canonical `data.parquet` per dataset
+  (`raw-data/hf/<dataset>/data.parquet`); Kaggle sources land unmodified (`raw-data/kaggle/<dataset>/*.csv`).
+  Both unlabeled — source labels ignored (see `DECISIONS.md`).
 
 Task-level breakdown (R1–R9) lives in `TODO.md`.
 
 ## Sources (confirmed, short-form Twitter/Reddit text only — no long-form review data)
 
-- HF: `sentiment140`, `cardiffnlp/tweet_eval` (sentiment config), `bdstar/twitter-sentiment-analysis`, `bdstar/Tweets-Sentiment-Analysis`
+- HF: `stanfordnlp/sentiment140`, `cardiffnlp/tweet_eval` (sentiment config), `bdstar/twitter-sentiment-analysis`, `bdstar/Tweets-Sentiment-Analysis`
 - Kaggle: `cosmos98/twitter-and-reddit-sentimental-analysis-dataset`, `tariqsays/sentiment-dataset-with-1-million-tweets`
 
 Each source file may carry its own sentiment labels; those are downloaded as-is (part of the file) but not read or used anywhere in X1 or later — see `DECISIONS.md` for why.

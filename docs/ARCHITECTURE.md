@@ -30,7 +30,7 @@ flowchart TD
 | FastAPI app               | `src/app/main.py` + `routers/` + `controllers/` + `interfaces/` | 3 REST endpoints, classifier instantiated once at module import.                                                                                                                                  |
 | `HfDownloader`            | `src/ingest/download_hf.py`                                     | Downloads 4 confirmed HF sources, lands raw parquet in MinIO. Doesn't stop on one source's failure — collects failures, returns list.                                                             |
 | `KaggleDownloader`        | `src/ingest/download_kaggle.py`                                 | Downloads 2 confirmed Kaggle sources, lands raw files in MinIO. Same failure-collection shape as `HfDownloader`.                                                                                  |
-| `MinioClient`             | `src/ingest/minio_client.py`                                    | Thin wrapper over the `minio` SDK — env-var-driven connection, single `upload_file` method.                                                                                                       |
+| `MinioClient`             | `src/ingest/minio_client.py`                                    | Thin wrapper over the `minio` SDK — env-var-driven connection, single `upload_file` method (now takes optional `metadata` for provenance, see STORAGE.md).                                        |
 
 ## Request path
 

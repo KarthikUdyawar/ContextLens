@@ -4,10 +4,12 @@
 
 # RUN: uv run --group ingest python -m src.ingest.download_hf
 
+import hashlib
 import sys
 import tempfile
 
 from datasets import load_dataset
+from huggingface_hub import HfApi
 
 from src.ingest.minio_client import MinioClient
 from src.utils.logging_config import configure_logging, get_logger
@@ -42,19 +44,31 @@ class HfDownloader:
         for name, config in HF_SOURCES:
             try:
                 args = (name, config) if config else (name,)
-                # nosec B615: no pinned revision — these 4 sources are fixed,
-                # low-churn public datasets (R8 scope is acquisition only,
-                # no revision-pin policy decided yet). Revisit if source list
-                # grows or datasets prove mutable.
+                # Resolve the moving `refs/convert/parquet` ref to its current
+                # commit SHA and pin the actual load_dataset() call to that SHA —
+                # gives an immutable, reproducible snapshot instead of a moving ref.
+                sha = HfApi().dataset_info(
+                    name, revision="refs/convert/parquet"
+                ).sha
+                if sha is None:
+                    raise ValueError(f"HF returned no commit sha for {name}")
+                revision = sha
                 dataset = load_dataset(
                     *args,
                     split="train",
-                    revision="refs/convert/parquet",
-                )  # nosec B615
+                    revision=revision,
+                )
                 with tempfile.NamedTemporaryFile(suffix=".parquet") as tmp:
                     dataset.to_parquet(tmp.name)
+                    with open(tmp.name, "rb") as f:
+                        checksum = hashlib.sha256(f.read()).hexdigest()
                     key = f"hf/{name}/data.parquet"
-                    self._minio_client.upload_file(self._bucket, key, tmp.name)
+                    self._minio_client.upload_file(
+                        self._bucket,
+                        key,
+                        tmp.name,
+                        metadata={"revision": revision, "sha256": checksum},
+                    )
             except Exception:
                 logger.exception("Failed to download/upload HF source: %s", name)
                 failures.append(name)
