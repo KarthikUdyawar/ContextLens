@@ -1,5 +1,11 @@
-"""Designed for creating reports and visualizations for model training and evaluation"""
+"""Designed for creating reports and visualizations for model training/evaluation."""
+from __future__ import annotations
+
+from collections.abc import Sequence
+from typing import Any
+
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import seaborn as sns
 import torch
@@ -8,14 +14,20 @@ from sklearn.metrics import (
     classification_report,
     confusion_matrix,
 )
+from sklearn.preprocessing import OneHotEncoder
+from torch.utils.data import DataLoader
 
 
 class ModelReportManager:
-    """Manager for creating reports and visualizations for model training and evaluation"""
+    """Manager for creating reports/visualizations for training and eval."""
 
-    def __init__(self, model_version_folder, save_reports=True, verbose=True):
-        """
-        Initialize the ModelReportManager.
+    def __init__(
+        self,
+        model_version_folder: str,
+        save_reports: bool = True,
+        verbose: bool = True,
+    ) -> None:
+        """Initialize the ModelReportManager.
 
         Args:
             model_version_folder: The folder where reports are saved.
@@ -28,13 +40,12 @@ class ModelReportManager:
 
     def plot_training_history(
         self,
-        train_losses,
-        val_losses,
-        train_accuracies,
-        val_accuracies,
-    ):
-        """
-        Plot and optionally save training history graphs.
+        train_losses: Sequence[float],
+        val_losses: Sequence[float],
+        train_accuracies: Sequence[float],
+        val_accuracies: Sequence[float],
+    ) -> None:
+        """Plot and optionally save training history graphs.
 
         Args:
             train_losses: Training losses.
@@ -63,9 +74,14 @@ class ModelReportManager:
         if self.verbose:
             self._print_verbose("Losses vs epoch", history_data)
 
-    def get_predictions(self, model, data_loader, device, predict_proba=False):
-        """
-        Get predictions from the model.
+    def get_predictions(
+        self,
+        model: torch.nn.Module,
+        data_loader: DataLoader,
+        device: str | torch.device,
+        predict_proba: bool = False,
+    ) -> tuple[torch.Tensor | np.ndarray, torch.Tensor | np.ndarray]:
+        """Get predictions from the model.
 
         Args:
             model: The classification model.
@@ -74,11 +90,11 @@ class ModelReportManager:
             predict_proba: If True, return probability predictions.
 
         Returns:
-            Predicted labels and true labels.
+            Predicted labels (or probabilities) and true labels.
         """
         model = model.eval()
-        predictions = []
-        real_values = []
+        predictions: list[torch.Tensor] = []
+        real_values: list[torch.Tensor] = []
         with torch.no_grad():
             for batch in data_loader:
                 input_ids = batch["input_ids"].to(device)
@@ -93,14 +109,18 @@ class ModelReportManager:
         y_test = torch.cat(real_values).cpu()
 
         if not predict_proba:
-            y_pred = torch.argmax(y_pred, axis=1).numpy()
-            y_test = torch.argmax(y_test, axis=1).numpy()
+            y_pred = torch.argmax(y_pred, dim=1).numpy()
+            y_test = torch.argmax(y_test, dim=1).numpy()
 
         return y_pred, y_test
 
-    def save_classification_report(self, true_labels, predicted_labels, target_names):
-        """
-        Generate and optionally save a classification report.
+    def save_classification_report(
+        self,
+        true_labels: Sequence[Any],
+        predicted_labels: Sequence[Any],
+        target_names: Sequence[str],
+    ) -> None:
+        """Generate and optionally save a classification report.
 
         Args:
             true_labels: True labels.
@@ -112,15 +132,18 @@ class ModelReportManager:
         )
         if self.save_reports:
             file_path = f"{self.model_version_folder}/report.txt"
-
             with open(file_path, "w", encoding="utf-8") as file:
                 file.write(report)
         if self.verbose:
             self._print_verbose("Classification report", report)
 
-    def save_confusion_matrix(self, one_hot, y_pred, y_test):
-        """
-        Generate and optionally save a confusion matrix.
+    def save_confusion_matrix(
+        self,
+        one_hot: OneHotEncoder,
+        y_pred: Sequence[Any],
+        y_test: Sequence[Any],
+    ) -> None:
+        """Generate and optionally save a confusion matrix.
 
         Args:
             one_hot: One-hot encoding (categories).
@@ -140,10 +163,13 @@ class ModelReportManager:
             self._print_verbose("Confusion Matrix", conf_mat)
 
     def _plot_line_graph(
-        self, train_losses, val_losses, train_accuracies, val_accuracies
-    ):
-        """
-        Plot line graphs for training history.
+        self,
+        train_losses: Sequence[float],
+        val_losses: Sequence[float],
+        train_accuracies: Sequence[float],
+        val_accuracies: Sequence[float],
+    ) -> None:
+        """Plot line graphs for training history.
 
         Args:
             train_losses: Training losses.
@@ -183,9 +209,8 @@ class ModelReportManager:
 
         plt.tight_layout()
 
-    def _print_verbose(self, title, report):
-        """
-        Print information if in verbose mode.
+    def _print_verbose(self, title: str, report: Any) -> None:
+        """Print information if in verbose mode.
 
         Args:
             title: Information title.

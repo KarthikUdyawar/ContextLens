@@ -1,9 +1,9 @@
-"""Text Sentiment Classifier for Sentiment Analysis"""
+"""Text Sentiment Classifier for Sentiment Analysis."""
 
 from src.pipeline.predict import TextSentimentClassifier
 
 
-def main():
+def main() -> None:
     """Main function for the interactive program."""
     MODEL_FILE_PATH = "src/model/0.2v/model.pth"
     classifier = TextSentimentClassifier(MODEL_FILE_PATH)

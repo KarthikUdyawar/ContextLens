@@ -1,4 +1,4 @@
-"""Builds the datasets"""
+"""Builds the datasets."""
 import os
 
 import pandas as pd
@@ -12,7 +12,7 @@ tqdm.pandas()
 
 PWD = os.getcwd()
 
-BATCH_SIZE = 6 * 5000 # 6 * 5000
+BATCH_SIZE = 6 * 5000  # 6 * 5000
 DATA_VERSION = "0.2v"
 SOURCE_FILE_DIR = f"{PWD}/artifacts/Text_dataset.br"
 DATA_VERSION_DIR = f"{PWD}/src/data/{DATA_VERSION}"
@@ -31,16 +31,15 @@ df = df.drop_duplicates(subset=["clean_text"])
 
 
 def target_encoder(text: str) -> str:
-    """
-    Encode text sentiment polarity.
+    """Encode text sentiment polarity.
 
     Args:
-        text (str): The input text for sentiment analysis.
+        text: The input text for sentiment analysis.
 
     Returns:
-        str: sentiment polarity.
+        Sentiment polarity label.
     """
-    polarity = TextBlob(text).sentiment.polarity  # type: ignore
+    polarity = TextBlob(text).sentiment.polarity
     return "positive" if polarity > 0 else "negative" if polarity < 0 else "neutral"
 
 

@@ -1,5 +1,7 @@
-"""Build and train the model"""
+"""Build and train the model."""
 import os
+from collections.abc import Sequence
+from typing import Any, cast
 
 import pandas as pd
 import torch
@@ -81,8 +83,7 @@ model.to(device)
 
 
 def get_accuracy(predictions: torch.Tensor, real_values: torch.Tensor) -> float:
-    """
-    Calculate the accuracy of predictions compared to the real values.
+    """Calculate the accuracy of predictions compared to the real values.
 
     Args:
         predictions (torch.Tensor): Predicted values.
@@ -97,7 +98,7 @@ def get_accuracy(predictions: torch.Tensor, real_values: torch.Tensor) -> float:
     predictions = torch.argmax(predictions, axis=1).numpy()
     real_values = torch.argmax(real_values, axis=1).numpy()
 
-    return accuracy_score(predictions, real_values)
+    return float(accuracy_score(predictions, real_values))
 
 
 def train_model(
@@ -107,8 +108,7 @@ def train_model(
     _criterion: BCEWithLogitsLoss,
     _device: torch.device,
 ) -> tuple[float, float]:
-    """
-    Train the BERT-based classifier model.
+    """Train the BERT-based classifier model.
 
     Args:
         _model (CustomBERTClassifier): The custom BERT model.
@@ -161,8 +161,7 @@ def test(
     _device: torch.device,
     valid_mode: bool = True,
 ) -> tuple[float, float]:
-    """
-    Test the BERT-based classifier model.
+    """Test the BERT-based classifier model.
 
     Args:
         _model (CustomBERTClassifier): The custom BERT model.
@@ -297,6 +296,12 @@ report_manager.plot_training_history(
     val_accuracies,
 )
 y_pred, y_test = report_manager.get_predictions(model, test_loader, device)
+
+# get_predictions returns Union[Tensor, ndarray]; at this call site
+# (predict_proba=False) both are ndarrays, which are Sequence-compatible.
+y_pred = cast(Sequence[Any], y_pred)
+y_test = cast(Sequence[Any], y_test)
+
 report_manager.save_classification_report(
     y_test, y_pred, one_hot.categories_[0].tolist()
 )

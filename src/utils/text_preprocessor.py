@@ -1,6 +1,10 @@
-"""This script performs text preprocessing on a dataset, including converting HTML entities, 
-removing mentions, links, and emojis, converting text to lowercase, and more.
+"""Text preprocessing for a dataset.
+
+HTML entity conversion, mention/link removal, emoji handling, lowercasing, and more.
 """
+
+from __future__ import annotations
+
 import html
 import os
 import re
@@ -13,11 +17,12 @@ _LOOKUP_DIR = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "..", "Text-Preprocessing-Data"
 )
 
-class TextPreprocessor:
-    """Converts raw text into clean text"""
 
-    def __init__(self):
-        """Initialize the preprocessor"""
+class TextPreprocessor:
+    """Converts raw text into clean text."""
+
+    def __init__(self) -> None:
+        """Initialize the preprocessor."""
         # Load abbreviation, apostrophe, and emoticon data
         self.abbreviations_df = pd.read_csv(
             os.path.join(_LOOKUP_DIR, "abbreviations.csv")
@@ -26,20 +31,19 @@ class TextPreprocessor:
         self.emoticons_df = pd.read_csv(os.path.join(_LOOKUP_DIR, "emoticons.csv"))
 
         # Create dictionaries from dataframes
-        self.abbreviations_dict = dict(self.abbreviations_df.values)
-        self.apostrophe_dict = dict(self.apostrophe_df.values)
-        self.emoticons_dict = dict(self.emoticons_df.values)
+        self.abbreviations_dict: dict[str, str] = dict(self.abbreviations_df.values)
+        self.apostrophe_dict: dict[str, str] = dict(self.apostrophe_df.values)
+        self.emoticons_dict: dict[str, str] = dict(self.emoticons_df.values)
 
-    def lookup_dict(self, text: str, dictionary: dict) -> str:
-        """
-        Replace placeholders in the text with values from a dictionary.
+    def lookup_dict(self, text: str, dictionary: dict[str, str]) -> str:
+        """Replace placeholders in the text with values from a dictionary.
 
         Args:
-            text (str): The text containing placeholders to be replaced.
-            dictionary (dict): A dictionary containing placeholder-value pairs.
+            text: The text containing placeholders to be replaced.
+            dictionary: A dictionary containing placeholder-value pairs.
 
         Returns:
-            str: The text with placeholders replaced by their corresponding values.
+            The text with placeholders replaced by their corresponding values.
         """
         for word in text.split():
             if word in dictionary:
@@ -50,10 +54,10 @@ class TextPreprocessor:
         """Preprocess the input text for natural language processing.
 
         Args:
-            input_text (str): The input text to be preprocessed.
+            input_text: The input text to be preprocessed.
 
         Returns:
-            str: The preprocessed text.
+            The preprocessed text.
         """
         # Step A : Converting html entities i.e. (&lt; &gt; &amp;)
         text = html.unescape(input_text)
@@ -74,7 +78,8 @@ class TextPreprocessor:
         text = self.lookup_dict(text, self.apostrophe_dict)
         # Step I : Short Word Lookup
         text = self.lookup_dict(text, self.abbreviations_dict)
-        # Step J : Replacing Punctuations, Special Characters & Numbers (integers) with space
+        # Step J : Replacing Punctuations, Special Characters & Numbers
+        # (integers) with space
         text = re.sub(r"[^a-z]", " ", text)
         # Step K: Remove whitespace
         text = re.sub(r"\s+", " ", text).strip()

@@ -1,4 +1,4 @@
-"""Pydantic Models for Text Request and Response"""
+"""Pydantic Models for Text Request and Response."""
 
 from pydantic import BaseModel, Field
 

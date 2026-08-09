@@ -1,44 +1,60 @@
 # TODO
 
-## Baseline (v1.0.0) — cheap, non-breaking — done (session 2)
+## Sprint X1 (current) — UV migration + raw data to MinIO
 
-- [x] Fix double softmax in `predict.py` (DECISIONS.md #1)
-- [x] Remove redundant preprocessing call in controller (#3)
-- [x] Cache `BertTokenizer` once per classifier instance instead of per-request (#6)
-- [x] Migrate `Field(example=...)` to `json_schema_extra` under Pydantic 2.4.2 (#8)
-- [x] Add CORS middleware (#9, needed before Streamlit UI can call the API)
-- [x] Fix CSV lookup paths to be package-relative, not cwd-relative (#10)
-- [x] Sync version string between `setup.py` and `main.py` (#11)
-- [x] Add `/health` endpoint (#12)
-- [x] Fix `dev-requirements.txt` CUDA-only `torch`/`torchaudio`/`torchvision` pins (#5)
-- [x] `classify_sentiment` fails loud (not silent) on missing checkpoint; API maps it to 503; `basic.py`/`gui.py` catch it (#4)
-- [x] Docker `HEALTHCHECK` wired to `/health` (INFRA.md gap)
-- [ ] Decide + document how `model.pth` reaches a fresh clone/Docker build (#7) — release asset vs registry vs documented manual step. **Still open** — moved to ROADMAP.md's production-grade track, needs a decision next session, not more code.
-- [ ] Fix README FastAPI version badge, stale vs pinned `fastapi==0.103.2` (#15, found session 2)
- 
+### Tooling — UV migration
 
-## Docs (session 1)
+- [x] **R1** — Write `pyproject.toml`: runtime deps under `[project.dependencies]` (from `requirements.txt`); `dev` dependency group (from `dev-requirements.txt`); `train` dependency group (training-only deps split out of the current flat dev list — torch training extras, TextBlob, etc.)
+  — Done (session 4). Also added, beyond original scope: `ingest` group (minio/kaggle/datasets, needed by R8–R9), `[tool.ruff]`/`[tool.bandit]`/`[tool.mypy]`/`[tool.pytest.ini_options]`/`[tool.coverage]` sections.
+- [x] **R2** — Remove `setup.py`, `requirements.txt`, `dev-requirements.txt` — no pip-compat retained (DECISIONS.md #20)
+  — Done (session 4).
+- [x] **R3** — Bump Python floor 3.10 → 3.12: `pyproject.toml`, `Dockerfile` base image, any CI config referencing 3.10
+  — Done (session 4). No CI config existed to update (INFRA.md: none in v1.0.0, tests.yml still deferred).
 
-- [x] `ARCHITECTURE.md`, `PIPELINE.md`, `MODELS.md`, `SERVICES.md`, `API_DOC.md`, `STORAGE.md`, `INFRA.md`, `DESIGN.md`, `DECISIONS.md`, `PRD.md`, `PROJECT.tree`, `USER-FLOW.md`, `ROADMAP.md`, `TODO.md`, `handoff.md`
+### Infra — docker-compose.yml
 
-## Docs (session 2)
+- [x] **R4** — Add `minio` service: image `minio/minio`, API + console ports exposed, default bucket `raw-data` created on startup (DECISIONS.md #22)
+  — Done (session 4). Bucket creation via a separate `minio-init` sidecar (mc client), not a startup flag on `minio` itself.
+- [x] **R5** — Add `postgres` service: default image, db name `contextlens` (DECISIONS.md #23), default port 5432 — table schema not built yet (next sprint)
+  — Done (session 4). Schema still not built, as scoped.
+- [x] **R6** — Add `vllm` service: `Qwen/Qwen2.5-1.5B-Instruct` on image `vllm/vllm-openai:v0.6.3.post1`
+  — Done (session 5), verified running end-to-end (`curl /v1/models` returns clean). Final model: `Qwen/Qwen2.5-1.5B-Instruct` (DECISIONS.md #28, superseded from initial Llama pick — gated/unapproved). `docker-compose.yml` `vllm` service: pinned image `v0.6.3.post1` (not `:latest` — CUDA version mismatch), `dns:` override for HF resolution, `--gpu-memory-utilization 0.9 --max-num-seqs 4` (tuned after an OOM at 0.7/default). `.env.example` now includes `HUGGING_FACE_HUB_TOKEN`.
 
-- [x] `DECISIONS.md` — statuses updated for #1, #3–#6, #8–#12; new #15 logged
-- [x] `TODO.md` — this file
-- [x] `ROADMAP.md` — new production-grade track added to "Not yet decided"
-- [x] `handoff.md` — refreshed for next session
 
-## v2.0.0 (capability track) — pending brainstorm before PRD
+### Credentials
 
-- [ ] Pick model: DeBERTa vs RoBERTa vs ModernBERT — shortlist + decision
-- [ ] Pick HF dataset — shortlist + decision
-- [ ] UV migration plan (pyproject.toml, lockfile, drop requirements.txt/setup.py or keep for compat)
-- [ ] pre-commit config (which hooks — black/ruff/mypy?)
-- [ ] `.coderabbit.yaml` — review rules/scope
-- [ ] Streamlit UI — scope (predict only, or also `/clean`, `/predict-prob` visualization like the existing Tkinter radar chart?)
-- [ ] Notebook experiments on new model+data before committing to training pipeline changes
-- [ ] Write 2.0 `PRD.md`
+- [x] **R7** — Kaggle API credentials: env vars `KAGGLE_USERNAME` / `KAGGLE_KEY`, documented in `.env.example`, never committed
+  — Done (session 4). `.env.example` also carries `MINIO_ENDPOINT`/`MINIO_ROOT_USER`/`MINIO_ROOT_PASSWORD`/`POSTGRES_USER`/`POSTGRES_PASSWORD`, matching compose defaults.
 
-## Production-grade track — pending brainstorm, separate from v2.0.0 capability work
+### Download scripts
 
-See ROADMAP.md's "Not yet decided" section for the full list (observability, security, testing/CI/CD, service architecture, model/data governance, infra). Not scoped into tasks yet — next session.
+- [x] **R8** — HF download script: `stanfordnlp/sentiment140`, `cardiffnlp/tweet_eval` (sentiment config), `bdstar/twitter-sentiment-analysis`, `bdstar/Tweets-Sentiment-Analysis` → MinIO `raw-data/hf/<dataset>/data.parquet`, exported as canonical parquet, labels ignored — Logic done (session 4), `src/ingest/download_hf.py` (`HfDownloader`), TDD'd incl. partial-failure handling. Entrypoint added R10 (session 5). **Smoke-tested live end-to-end session 6** — all 4 sources landed in MinIO, confirmed via `mc ls`. One fix needed: `sentiment140` → `stanfordnlp/sentiment140` (old slug's repo only ships a deprecated loader script, `datasets>=3.0` dropped script support), plus `revision="refs/convert/parquet"` added to `load_dataset()` call so all 4 sources resolve via HF's parquet-native branch instead of `main`. See DECISIONS.md #30.
+- [x] **R9** — Kaggle download script: `cosmos98/twitter-and-reddit-sentimental-analysis-dataset`, `tariqsays/sentiment-dataset-with-1-million-tweets` → MinIO `raw-data/kaggle/<dataset>/`, raw, unmodified, labels ignored
+  — Logic done (session 4), `src/ingest/download_kaggle.py` (`KaggleDownloader`), same shape/tests. Entrypoint added R10 (session 5). **Smoke-tested live end-to-end session 6** — both sources landed in MinIO, confirmed via `mc ls`. No code changes needed, ran clean first try.
+
+
+### Follow-ups opened session 4 (small, not originally scoped — closing these closed X1)
+
+- [x] **R10** — Add `if __name__ == "__main__":` entrypoints to `download_hf.py`/`download_kaggle.py` so R8/R9 are actually runnable, not just importable
+  — Done (session 5).
+- [x] **R11** — Wire `configure_logging()` into those entrypoints and `src/app/main.py` startup
+  — Done (session 5). Note: in `main.py`, `configure_logging()` runs after `classifier` import (module-level global load) — logging isn't active for that first model-load. Not reordered — flagged, not fixed, pending your call.
+- [x] **R12** — Run `uv lock`, commit `uv.lock` — `Dockerfile`'s `uv sync --frozen` needs it and it's currently missing from the repo
+  — Done (session 5). 205 packages resolved, `uv.lock` committed.
+
+**X1 implementation closed (session 5); live acquisition verified (session 6)** — R6 + R10–R12 all done. Next sprint (Postgres ingestion + vLLM/DSPy labelling) not started, not tracked here — see `ROADMAP.md` sequencing.
+**Status: implementation closed session 5 (R6, R10–R12 done); R8/R9 live acquisition verified separately, session 6.** Next sprint (Postgres ingestion + vLLM/DSPy labelling) not started, not tracked here — see `ROADMAP.md` sequencing.
+
+### CodeRabbit follow-up (session 7) — not new R-numbered tasks, closing open review findings
+
+- [x] `predict.py` `torch.load()` → `weights_only=True` (closes DECISIONS.md #24)
+- [x] `custom_BERT_classifier.py`/`text_dataset.py` HF revision pinned via shared `BERT_MODEL_REVISION` (closes DECISIONS.md #25) — **needs verification** against `git ls-remote` before trusting the pinned sha
+- [x] `download_hf.py`/`download_kaggle.py`/`minio_client.py` — per-object provenance metadata (revision/checksum, kaggle version/checksum) on MinIO uploads
+- [x] `predict.py::classify_sentiment` `torch.argmax(..., axis=1)` → `dim=1` (new finding, DECISIONS.md #32) — **needs a smoke test**, pre-fix runtime behavior wasn't confirmed
+- [x] Doc drift cleanup: `PRD.md`/`ROADMAP.md`/`SERVICES.md`/`STORAGE.md`/`PROJECT.tree`/`handoff.md` — stale `sentiment140` slug, stale vLLM "still open" language, stale `/health`/no-database claims, stale artifact tree entry, credential-rotation wording
+- [ ] Dockerfile `uv` image digest pin — blocked on you pasting the real `sha256` from `docker buildx imagetools inspect`
+- [ ] `DECISIONS.md` #23 missing third rationale cell — deferred, said "later" this session
+
+See `DECISIONS.md` #24, #25, #32 for full detail; `STORAGE.md`/`ARCHITECTURE.md` for the metadata/MinioClient doc updates.
+
+See `ROADMAP.md` for full sequencing/history, `DECISIONS.md` for this sprint's decisions, `PRD.md` for X1 scope detail.

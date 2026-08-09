@@ -1,4 +1,4 @@
-"""Text Sentiment Classifier for Sentiment Analysis"""
+"""Text Sentiment Classifier for Sentiment Analysis."""
 
 import logging
 import os
@@ -26,12 +26,13 @@ class TextSentimentClassifier:
         preprocess_text(input_text: str) -> str:
             Preprocess the input text for sentiment analysis.
 
-        classify_sentiment(input_text: str, return_probabilities: bool = False) -> str or list:
+        classify_sentiment(cleaned_text: str,
+            return_probabilities: bool = False) -> str | list[float]:
             Predict the sentiment of the input text and return the result.
 
     """
 
-    def __init__(self, model_checkpoint_file: str):
+    def __init__(self, model_checkpoint_file: str) -> None:
         """Initialize the TextSentimentClassifier.
 
         Args:
@@ -47,7 +48,11 @@ class TextSentimentClassifier:
         self.model_loaded = False
         if os.path.exists(model_checkpoint_file):
             try:
-                checkpoint = torch.load(model_checkpoint_file, map_location=self.device)
+                checkpoint = torch.load(
+                    model_checkpoint_file,
+                    map_location=self.device,
+                    weights_only=True,
+                 )
                 self.model.load_state_dict(checkpoint["model_state_dict"])
                 self.model_loaded = True
                 print("Model loaded")
@@ -76,16 +81,17 @@ class TextSentimentClassifier:
 
     def classify_sentiment(
         self, cleaned_text: str, return_probabilities: bool = False
-    ) -> str | list:
+    ) -> str | list[float]:
         """Predict the sentiment of already-cleaned text and return the result.
 
         Text is preprocessed exactly once, by the caller (via `preprocess_text`),
         not again inside this method (DECISIONS.md #3).
 
         Args:
-            cleaned_text (str): Text that has already been run through `preprocess_text`.
-            return_probabilities (bool, optional): Whether to return sentiment probabilities.
-            Defaults to False.
+            cleaned_text (str): Text that has already been run through
+                `preprocess_text`.
+            return_probabilities (bool, optional): Whether to return
+                sentiment probabilities. Defaults to False.
 
         Returns:
             str or list: The predicted sentiment label or probabilities.
@@ -107,7 +113,7 @@ class TextSentimentClassifier:
         # `outputs` is already softmax-normalized inside CustomBERTClassifier.forward();
         # do NOT softmax again here (DECISIONS.md #1).
         y_pred_prob = outputs.cpu().numpy()[0]
-        y_pred = torch.argmax(outputs, axis=1).cpu().numpy()[0]
+        y_pred = torch.argmax(outputs, dim=1).cpu().numpy()[0]
 
         _result = (
             "positive" if y_pred == 2 else "negative" if y_pred == 0 else "neutral"

@@ -1,6 +1,19 @@
 # Storage — v1.0.0
 
-No database. All storage is filesystem, mostly parquet + torch checkpoints.
+No active database consumer. v1.0.0 storage is filesystem, mostly parquet + torch checkpoints.
+
+## X1 addition — MinIO (raw ingest landing)
+
+New as of Sprint X1, alongside the filesystem storage below — not a replacement.
+
+| Path                                 | Format  | Contents                                                                   |
+| ------------------------------------ | ------- | -------------------------------------------------------------------------- |
+| `raw-data/hf/<dataset>/data.parquet` | parquet | HF source dumps, exported as canonical parquet, labels ignored (4 sources) |
+| `raw-data/kaggle/<dataset>/*.csv`    | csv     | Raw Kaggle source dumps, unmodified, labels ignored (2 sources)            |
+
+Bucket `raw-data` (DECISIONS.md #22), single bucket, source-prefixed keys. Postgres (`contextlens` db, DECISIONS.md #23) stood up but unused — next sprint's consumer, schema not yet designed.
+
+Each uploaded object carries provenance as MinIO object metadata (queryable via `mc stat`): HF objects get `revision` (pinned commit sha, not the moving `refs/convert/parquet` ref) + `sha256`; Kaggle objects get `kaggle_version` (best-effort, `"unknown"` if the Kaggle API search doesn't surface an exact `ref` match) + `sha256`.
 
 | Path                                                 | Format                    | Committed?                       | Contents                                                                                                                                                                                |
 | ---------------------------------------------------- | ------------------------- | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

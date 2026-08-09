@@ -1,68 +1,127 @@
-ContextLens/ (v1.0.0 baseline)
-├── artifacts/
-│   └── Text_dataset.br
-├── docs/
-│   ├── API_DOC.md
-│   ├── ARCHITECTURE.md
-│   ├── DECISIONS.md
-│   ├── DESIGN.md
-│   ├── handoff.md
-│   ├── INFRA.md
-│   ├── MODELS.md
-│   ├── PIPELINE.md
-│   ├── PRD.md
-│   ├── PROJECT.tree
-│   ├── ROADMAP.md
-│   ├── SERVICES.md
-│   ├── STORAGE.md
-│   ├── TODO.md
-│   └── USER-FLOW.md
-├── examples/
-│   ├── basic.py
-│   └── gui.py
-├── img/
-│   ├── icon.ico
-│   ├── icon.png
-│   ├── logo.png
-│   ├── meter.png
-│   └── screenshot.png
-├── notebook/
-│   ├── 01_get_data.ipynb
-│   ├── 02_clean_text.ipynb
-│   ├── 03_eda.ipynb
-│   └── 04_train_model.ipynb
-├── src/
-│   ├── app/
-│   │   ├── controllers/
-│   │   │   └── text_sentiment_controller.py
-│   │   ├── interfaces/
-│   │   │   └── text_sentiment_interface.py
-│   │   ├── routers/
-│   │   │   └── text_sentiment_router.py
-│   │   └── main.py
-│   ├── model/
-│   │   ├── 0.1v/checkpoint_0 … checkpoint_6/   (reports + plots, no weights)
-│   │   └── 0.2v/                               (reports + plots, no weights)
-│   ├── pipeline/
-│   │   ├── build_datasets.py
-│   │   ├── build_model.py
-│   │   └── predict.py
-│   ├── Text-Preprocessing-Data/
-│   │   ├── abbreviations.csv
-│   │   ├── apostrophe.csv
-│   │   └── emoticons.csv
-│   └── utils/
-│       ├── custom_BERT_classifier.py
-│       ├── data_frame_batch_loader.py
-│       ├── model_report.py
-│       ├── split_data.py
-│       ├── text_dataset.py
-│       └── text_preprocessor.py
-├── Dockerfile
+.
+├── artifacts
+│   └── Text_dataset.br
 ├── docker-compose.yml
-├── dev-requirements.txt
-├── requirements.txt
-├── setup.py
-└── README.md
+├── Dockerfile
+├── docs
+│   ├── API_DOC.md
+│   ├── ARCHITECTURE.md
+│   ├── DECISIONS.md
+│   ├── DESIGN.md
+│   ├── handoff.md
+│   ├── INFRA.md
+│   ├── MODELS.md
+│   ├── PIPELINE.md
+│   ├── PRD.md
+│   ├── PROJECT.tree
+│   ├── ROADMAP.md
+│   ├── SERVICES.md
+│   ├── STORAGE.md
+│   ├── TODO.md
+│   └── USER-FLOW.md
+├── examples
+│   ├── basic.py
+│   └── gui.py
+├── img
+│   ├── icon.ico
+│   ├── icon.png
+│   ├── logo.png
+│   ├── meter.png
+│   └── screenshot.png
+├── LICENSE
+├── Makefile
+├── notebook
+│   ├── 01_get_data.ipynb
+│   ├── 02_clean_text.ipynb
+│   ├── 03_eda.ipynb
+│   └── 04_train_model.ipynb
+├── pyproject.toml
+├── README.md
+├── src
+│   ├── app
+│   │   ├── controllers
+│   │   │   ├── __init__.py
+│   │   │   └── text_sentiment_controller.py
+│   │   ├── __init__.py
+│   │   ├── interfaces
+│   │   │   ├── __init__.py
+│   │   │   └── text_sentiment_interface.py
+│   │   ├── main.py
+│   │   └── routers
+│   │       ├── __init__.py
+│   │       └── text_sentiment_router.py
+│   ├── ingest
+│   │   ├── download_hf.py
+│   │   ├── download_kaggle.py
+│   │   ├── __init__.py
+│   │   └── minio_client.py
+│   ├── __init__.py
+│   ├── model
+│   │   ├── 0.1v
+│   │   │   ├── checkpoint_0
+│   │   │   │   ├── ConfusionMatrixDisplay+0.png
+│   │   │   │   ├── report+0.txt
+│   │   │   │   ├── training_history+0.csv
+│   │   │   │   └── Training&Validation-Losses+0.png
+│   │   │   ├── checkpoint_1
+│   │   │   │   ├── ConfusionMatrixDisplay+1.png
+│   │   │   │   ├── report+1.txt
+│   │   │   │   ├── training_history+1.csv
+│   │   │   │   └── Training&Validation-Losses+1.png
+│   │   │   ├── checkpoint_2
+│   │   │   │   ├── ConfusionMatrixDisplay+2.png
+│   │   │   │   ├── report+2.txt
+│   │   │   │   ├── training_history+2.csv
+│   │   │   │   └── Training&Validation-Losses+2.png
+│   │   │   ├── checkpoint_3
+│   │   │   │   ├── ConfusionMatrixDisplay+3.png
+│   │   │   │   ├── report+3.txt
+│   │   │   │   ├── training_history+3.csv
+│   │   │   │   └── Training&Validation-Losses+3.png
+│   │   │   ├── checkpoint_4
+│   │   │   │   ├── ConfusionMatrixDisplay+4.png
+│   │   │   │   ├── report+4.txt
+│   │   │   │   ├── training_history+4.csv
+│   │   │   │   └── Training&Validation-Losses+4.png
+│   │   │   ├── checkpoint_5
+│   │   │   │   ├── ConfusionMatrixDisplay+5.png
+│   │   │   │   ├── report+5.txt
+│   │   │   │   ├── training_history+5.csv
+│   │   │   │   └── Training&Validation-Losses+5.png
+│   │   │   └── checkpoint_6
+│   │   │       ├── ConfusionMatrixDisplay+6.png
+│   │   │       ├── report+6.txt
+│   │   │       ├── training_history+6.csv
+│   │   │       └── Training&Validation-Losses+6.png
+│   │   └── 0.2v
+│   │       ├── ConfusionMatrixDisplay.png
+│   │       ├── report.txt
+│   │       ├── training_history.csv
+│   │       └── Training&Validation-Losses.png
+│   ├── pipeline
+│   │   ├── build_datasets.py
+│   │   ├── build_model.py
+│   │   ├── __init__.py
+│   │   └── predict.py
+│   ├── Text-Preprocessing-Data
+│   │   ├── abbreviations.csv
+│   │   ├── apostrophe.csv
+│   │   └── emoticons.csv
+│   └── utils
+│       ├── custom_BERT_classifier.py
+│       ├── data_frame_batch_loader.py
+│       ├── __init__.py
+│       ├── logging_config.py
+│       ├── model_report.py
+│       ├── split_data.py
+│       ├── text_dataset.py
+│       └── text_preprocessor.py
+├── tests
+│   └── unit
+│       ├── test_download_hf.py
+│       ├── test_download_kaggle.py
+│       ├── test_logging_config.py
+│       └── test_minio_client.py
+└── uv.lock
 
-Not present (gitignored, must be generated/fetched): src/data/{version}/*.parquet, src/model/{version}/model.pth
+26 directories, 98 files
