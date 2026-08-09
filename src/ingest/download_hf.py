@@ -2,6 +2,8 @@
 
 # src/ingest/download_hf.py
 
+# RUN: uv run --group ingest python -m src.ingest.download_hf
+
 import sys
 import tempfile
 
@@ -14,7 +16,7 @@ logger = get_logger(__name__)
 
 # (dataset name, config) — config=None means no sub-config needed.
 HF_SOURCES: list[tuple[str, str | None]] = [
-    ("sentiment140", None),
+    ("stanfordnlp/sentiment140", None),
     ("cardiffnlp/tweet_eval", "sentiment"),
     ("bdstar/twitter-sentiment-analysis", None),
     ("bdstar/Tweets-Sentiment-Analysis", None),
@@ -44,7 +46,11 @@ class HfDownloader:
                 # low-churn public datasets (R8 scope is acquisition only,
                 # no revision-pin policy decided yet). Revisit if source list
                 # grows or datasets prove mutable.
-                dataset = load_dataset(*args, split="train")  # nosec B615
+                dataset = load_dataset(
+                    *args,
+                    split="train",
+                    revision="refs/convert/parquet",
+                )  # nosec B615
                 with tempfile.NamedTemporaryFile(suffix=".parquet") as tmp:
                     dataset.to_parquet(tmp.name)
                     key = f"hf/{name}/data.parquet"
@@ -60,4 +66,3 @@ if __name__ == "__main__":
     failed = HfDownloader(minio_client=MinioClient()).download_all()
     if failed:
         sys.exit(1)
-        

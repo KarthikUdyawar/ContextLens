@@ -24,11 +24,22 @@ interfaces/         — text_sentiment_interface.py: pydantic request/response m
 - `examples/gui.py` — Tkinter desktop app, also imports the classifier directly, adds a matplotlib radar chart of class probabilities. `iconbitmap(.ico)` call is Windows-only.
 - No web/JS frontend exists yet (planned for 2.0 — Streamlit).
 
+## Ingest scripts (X1, not a service — run manually, no server process)
+
+```text
+src/ingest/
+  download_hf.py       — HfDownloader, 4 HF sources → MinIO raw-data/hf/
+  download_kaggle.py   — KaggleDownloader, 2 Kaggle sources → MinIO raw-data/kaggle/
+  minio_client.py      — MinioClient, thin SDK wrapper
+```
+
+Both scripts run via `if __name__ == "__main__":` (R10), collect per-source failures without stopping (partial-failure tolerant), exit 1 if any source failed. Live-verified end-to-end (all 6 sources landed) — see `DECISIONS.md` #31. Not wired to the FastAPI service or any other consumer — standalone, invoked manually via `uv run --group ingest python -m src.ingest.download_hf`.
+
 ## Cross-cutting gaps
 
-- No CORS middleware — blocks any browser-based frontend (relevant once the Streamlit UI lands).
+- CORS middleware added v1.0.1 (`allow_origins=["*"]`, DECISIONS.md #9) — revisit origin allowlist before Streamlit ships past localhost.
 - No auth/rate limiting.
-- No `/health` or `/ready` endpoint.
+- `/health` added v1.0.1, readiness-aware (DECISIONS.md #12). No `/ready` separate endpoint.
 - No request size limits on `TextRequest.text`.
 
 Full endpoint contracts: `API_DOC.md`.

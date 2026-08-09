@@ -1,4 +1,5 @@
 """MinIO client — thin wrapper for landing raw ingest files."""
+
 # src/ingest/minio_client.py
 
 import os

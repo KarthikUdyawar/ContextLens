@@ -73,7 +73,7 @@ UV migration + MinIO/Postgres/vLLM compose services + Kaggle creds + raw HF/Kagg
 
 1. ~~v1.0.0 baseline docs~~ (session 1)
 2. ~~v1.0.1 patch pass~~ (session 2)
-3. Sprint X1 (current) — UV migration + MinIO/Postgres/vLLM compose services + Kaggle creds + raw data landed in MinIO
+3. ~~Sprint X1~~ (sessions 3–6) — UV migration + MinIO/Postgres/vLLM compose services + Kaggle creds + raw data landed in MinIO (live-verified session 6)
 4. Next sprint — extract text → Postgres (`label = NULL`), grow to ~1M rows
 5. vLLM/DSPy batch labelling pass over the ~1M rows
 6. 2.0.0 brainstorm → `docs/PRD.md` gets superseded by a versioned 2.0 PRD (or a new `docs/PRD-2.0.md` — naming TBD) — **and** production-grade track brainstorm, sequencing between the two TBD

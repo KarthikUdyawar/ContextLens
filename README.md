@@ -91,16 +91,16 @@ This section provides instructions on how to set up the project locally. Follow 
 
 Before proceeding with the installation, ensure that you have the following prerequisites installed:
 
-- Python (version 3.10.6)
-- Jupyter Notebook (version 6.5.2)
+- Python (version 3.12+, bumped from 3.10 in Sprint X1, R3)
+- UV (dependency manager, replaces pip/venv — see uv.lock)
 - Docker (version 20.10.8)
 
-You can check the versions of Python and Jupyter Notebook by running the following commands in the terminal:
+You can check installed versions:
 
 ```bash
 python --version
 
-jupyter notebook --version
+uv --version
 
 docker --version
 ```
@@ -117,22 +117,16 @@ Follow the steps below to install and set up the project:
    git clone https://github.com/KarthikUdyawar/ContextLens.git
    ```
 
-2. **Create a virtual environment and activate it:**
+2. **Install dependencies with UV:**
 
-   To isolate project dependencies, create a virtual environment and activate it:
-
-   ```bash
-   python3 -m venv env
-   source env/bin/activate   # On Windows: env\Scripts\activate
-   ```
-
-3. **Install package**
-
-   Install the package using the following command:
+   UV manages the venv automatically (`.venv/`), no separate activation step needed for most commands (`uv run ...` handles it).
 
    ```bash
-   pip install .
+   uv sync --frozen                # runtime deps only
+   uv sync --frozen --group dev    # + dev tooling (tests, lint, jupyter)
    ```
+
+   Optional groups: `--group train` (training-only deps), `--group ingest` (MinIO/Kaggle/HF download scripts — see `docs/SERVICES.md`).
 
 ## Usage
 

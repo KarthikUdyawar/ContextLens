@@ -2,6 +2,17 @@
 
 No database. All storage is filesystem, mostly parquet + torch checkpoints.
 
+## X1 addition — MinIO (raw ingest landing)
+
+New as of Sprint X1, alongside the filesystem storage below — not a replacement.
+
+| Path                                 | Format  | Contents                                                        |
+| ------------------------------------ | ------- | --------------------------------------------------------------- |
+| `raw-data/hf/<dataset>/data.parquet` | parquet | Raw HF source dumps, unmodified, labels ignored (4 sources)     |
+| `raw-data/kaggle/<dataset>/*.csv`    | csv     | Raw Kaggle source dumps, unmodified, labels ignored (2 sources) |
+
+Bucket `raw-data` (DECISIONS.md #22), single bucket, source-prefixed keys. Postgres (`contextlens` db, DECISIONS.md #23) stood up but unused — next sprint's consumer, schema not yet designed.
+
 | Path                                                 | Format                    | Committed?                       | Contents                                                                                                                                                                                |
 | ---------------------------------------------------- | ------------------------- | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `artifacts/Text_dataset.br`                          | brotli-compressed parquet | Yes                              | Raw consolidated Reddit/Twitter text, source for `build_datasets.py`.                                                                                                                   |

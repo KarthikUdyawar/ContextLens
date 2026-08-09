@@ -1,5 +1,9 @@
 """Download raw text from confirmed Kaggle sources, land unmodified in MinIO."""
 
+# src/ingest/download_kaggle.py
+
+# RUN: uv run --group ingest python -m src.ingest.download_kaggle
+
 import os
 import sys
 import tempfile

@@ -29,9 +29,10 @@
 ### Download scripts
 
 - [x] **R8** — HF download script: `sentiment140`, `cardiffnlp/tweet_eval` (sentiment config), `bdstar/twitter-sentiment-analysis`, `bdstar/Tweets-Sentiment-Analysis` → MinIO `raw-data/hf/<dataset>/`, raw, unmodified, labels ignored
-  — Logic done (session 4), `src/ingest/download_hf.py` (`HfDownloader`), TDD'd incl. partial-failure handling. **Not yet runnable as a script — no `if __name__ == "__main__":` (see R10 below).**
+ — Logic done (session 4), `src/ingest/download_hf.py` (`HfDownloader`), TDD'd incl. partial-failure handling. Entrypoint added R10 (session 5). **Smoke-tested live end-to-end session 6** — all 4 sources landed in MinIO, confirmed via `mc ls`. One fix needed: `sentiment140` → `stanfordnlp/sentiment140` (old slug's repo only ships a deprecated loader script, `datasets>=3.0` dropped script support), plus `revision="refs/convert/parquet"` added to `load_dataset()` call so all 4 sources resolve via HF's parquet-native branch instead of `main`. See DECISIONS.md #30.
 - [x] **R9** — Kaggle download script: `cosmos98/twitter-and-reddit-sentimental-analysis-dataset`, `tariqsays/sentiment-dataset-with-1-million-tweets` → MinIO `raw-data/kaggle/<dataset>/`, raw, unmodified, labels ignored
-  — Logic done (session 4), `src/ingest/download_kaggle.py` (`KaggleDownloader`), same shape/tests. Same R10 gap.
+  — Logic done (session 4), `src/ingest/download_kaggle.py` (`KaggleDownloader`), same shape/tests. Entrypoint added R10 (session 5). **Smoke-tested live end-to-end session 6** — both sources landed in MinIO, confirmed via `mc ls`. No code changes needed, ran clean first try.
+
 
 ### Follow-ups opened session 4 (small, not originally scoped — closing these closed X1)
 
